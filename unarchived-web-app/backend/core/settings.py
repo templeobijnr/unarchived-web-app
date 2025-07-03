@@ -23,6 +23,16 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework_simplejwt",
     "api",
+    'users',
+    'projects',
+    'dpgs',
+    'files',
+    'rfq',
+    'quotes',
+    'suppliers',
+    'chat',
+    'ai',
+    'common',
 ]
 
 # Middleware
