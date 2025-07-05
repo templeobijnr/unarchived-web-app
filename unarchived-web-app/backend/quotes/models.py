@@ -1,5 +1,6 @@
 from django.db import models
-
+from suppliers.models import Supplier
+from rfq.models import RFQ
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
