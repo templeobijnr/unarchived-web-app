@@ -1,8 +1,6 @@
 from rest_framework import serializers
-from .models import (
-    
-    Quote
-)
+from ..models import *
+
 class QuoteSerializer(serializers.ModelSerializer):
     """Enhanced quote serializer"""
     

@@ -10,7 +10,11 @@ from django.db.models import Q
 from typing import List, Dict, Any
 import logging
 
-from .models import RFQ, Supplier, RFQDistribution, CommunicationLog
+from suppliers.models import *
+from rfq.models import *
+
+
+
 
 logger = logging.getLogger(__name__)
 

@@ -15,10 +15,11 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
 django.setup()
 
 from django.contrib.auth.models import User
-from api.models import (
-    Supplier, SupplierContact, SupplierVerification, RFQ, RFQDistribution,
-    Quote, CommunicationLog
-)
+
+from suppliers.models import *
+from rfq.models import *
+from quotes.models import *
+
 from api.rfq_distribution import rfq_distribution_service
 from api.supplier_verification import supplier_verification_service
 

@@ -1,10 +1,7 @@
 from django.db import models
-from suppliers.models import Supplier
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
-from django.utils import timezone
 
-# Create your models here.
 class RFQ(models.Model):
     """Enhanced RFQ with distribution capabilities"""
     
@@ -74,7 +71,6 @@ class RFQ(models.Model):
     def __str__(self):
         return self.title
 
-
 class RFQDistribution(models.Model):
     """Track RFQ distribution to suppliers"""
     
@@ -87,7 +83,7 @@ class RFQDistribution(models.Model):
     ]
     
     rfq = models.ForeignKey(RFQ, on_delete=models.CASCADE, related_name='distributions')
-    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, related_name='rfq_distributions')
+    supplier = models.ForeignKey("suppliers.Supplier", on_delete=models.CASCADE, related_name='rfq_distributions')
     
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='sent')
     sent_at = models.DateTimeField(auto_now_add=True)

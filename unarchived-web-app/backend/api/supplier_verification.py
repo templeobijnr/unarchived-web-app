@@ -8,8 +8,10 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from typing import List, Dict, Any
 import logging
+from suppliers.models import *
+from rfq.models import *
+from django.contrib.auth.models import User
 
-from .models import Supplier, SupplierVerification, SupplierContact, User
 
 logger = logging.getLogger(__name__)
 

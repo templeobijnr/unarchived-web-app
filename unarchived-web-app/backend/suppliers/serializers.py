@@ -1,9 +1,6 @@
-
 from rest_framework import serializers
-from .models import (
-    Supplier, SupplierContact, SupplierVerification,
-     CommunicationLog
-)
+from .models import *
+
 class SupplierSerializer(serializers.ModelSerializer):
     """Enhanced supplier serializer with verification status"""
     
@@ -49,7 +46,6 @@ class SupplierSerializer(serializers.ModelSerializer):
             for comm in recent_communications
         ]
 
-
 class SupplierContactSerializer(serializers.ModelSerializer):
     """Supplier contact serializer"""
     
@@ -73,7 +69,6 @@ class SupplierContactSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['created_at', 'updated_at']
 
-
 class SupplierVerificationSerializer(serializers.ModelSerializer):
     """Supplier verification serializer"""
     
@@ -95,8 +90,6 @@ class SupplierVerificationSerializer(serializers.ModelSerializer):
         read_only_fields = [
             'created_at', 'updated_at', 'supplier_name', 'reviewer_name'
         ]
-
-
 
 class CommunicationLogSerializer(serializers.ModelSerializer):
     """Communication log serializer"""
@@ -130,3 +123,6 @@ class CommunicationLogSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at', 'supplier_name', 'contact_name', 
             'initiated_by_name'
         ]
+        
+        
+        

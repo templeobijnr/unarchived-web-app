@@ -23,16 +23,17 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework_simplejwt",
     "api",
-    'users',
-    'projects',
+    # Custom apps
+    'ai',
+    
+    'chat',
     'dpgs',
     'files',
-    'rfq',
+    'projects',
     'quotes',
+    'rfq',
     'suppliers',
-    'chat',
-    'ai',
-    'common',
+    'users',
 ]
 
 # Middleware
@@ -165,3 +166,12 @@ CORS_ALLOW_HEADERS = [
 OPENAI_API_KEY = config('OPENAI_API_KEY')
 OPENAI_MODEL = config('OPENAI_MODEL', default='gpt-4o-mini')
 
+
+
+# Google Cloud Vision API
+# Make sure GOOGLE_APPLICATION_CREDENTIALS env variable is set to your service account path
+
+# Celery settings
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'

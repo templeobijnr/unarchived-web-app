@@ -1,9 +1,5 @@
 from rest_framework import serializers
-from .models import (
-   RFQ, RFQDistribution,
-    
-)
-
+from .models import *
 
 class RFQSerializer(serializers.ModelSerializer):
     """Enhanced RFQ serializer with distribution capabilities"""
@@ -66,7 +62,6 @@ class RFQSerializer(serializers.ModelSerializer):
             'response_rate': (responded / total * 100) if total > 0 else 0
         }
 
-
 class RFQDistributionSerializer(serializers.ModelSerializer):
     """RFQ distribution serializer"""
     
@@ -88,4 +83,3 @@ class RFQDistributionSerializer(serializers.ModelSerializer):
             'sent_at', 'delivered_at', 'viewed_at', 'responded_at',
             'email_sent', 'notification_sent', 'supplier_name', 'rfq_title'
         ]
-

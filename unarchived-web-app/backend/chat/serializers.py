@@ -1,3 +1,5 @@
+from rest_framework import serializers
+from ..models import *
 
 class MessageSerializer(serializers.ModelSerializer):
     """Chat message serializer"""
@@ -13,4 +15,3 @@ class MessageSerializer(serializers.ModelSerializer):
             'id', 'author', 'author_display', 'content', 'timestamp', 'typing'
         ]
         read_only_fields = ['timestamp']
-

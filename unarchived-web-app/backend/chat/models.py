@@ -1,10 +1,5 @@
 from django.db import models
-from django.db import models
 from django.contrib.auth.models import User
-from django.core.validators import MinValueValidator, MaxValueValidator
-from django.utils import timezone
-
-# Create your models here.
 class Message(models.Model):
     """Chat message model for AI assistant conversations"""
     AUTHOR_CHOICES = [
