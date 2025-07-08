@@ -7,10 +7,14 @@ from django.contrib.auth import authenticate, login, logout
 from django.shortcuts import get_object_or_404
 from django.db.models import Q, Count, Avg
 from datetime import datetime, timedelta
-from ..models import *
-from ..serializers import *
-from ..rfq_distribution import rfq_distribution_service
-from ..supplier_verification import supplier_verification_service
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.permissions import AllowAny
+
+from .models import *
+from .serializers import *
+from rfq.rfq_distribution import rfq_distribution_service
+from suppliers.supplier_verification import supplier_verification_service
 import logging
 
 logger = logging.getLogger(__name__)

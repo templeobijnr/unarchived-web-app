@@ -20,8 +20,8 @@ from suppliers.models import *
 from rfq.models import *
 from quotes.models import *
 
-from api.rfq_distribution import rfq_distribution_service
-from api.supplier_verification import supplier_verification_service
+from rfq.rfq_distribution import rfq_distribution_service
+from suppliers.supplier_verification import supplier_verification_service
 
 
 def create_test_data():

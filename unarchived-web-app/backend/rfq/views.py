@@ -7,10 +7,10 @@ from django.contrib.auth import authenticate, login, logout
 from django.shortcuts import get_object_or_404
 from django.db.models import Q, Count, Avg
 from datetime import datetime, timedelta
-from ..models import *
-from ..serializers import *
-from ..rfq_distribution import rfq_distribution_service
-from ..supplier_verification import supplier_verification_service
+from .models import *
+from .serializers import *
+from rfq.rfq_distribution import rfq_distribution_service
+from suppliers.supplier_verification import supplier_verification_service
 import logging
 
 logger = logging.getLogger(__name__)
@@ -80,7 +80,7 @@ class RFQViewSet(viewsets.ModelViewSet):
             supplier for supplier in matched_suppliers 
             if supplier.id not in distributed_suppliers
         ]
-        
+        from suppliers.serializers import SupplierSerializer
         serializer = SupplierSerializer(available_suppliers, many=True)
         return Response(serializer.data)
     
@@ -89,6 +89,7 @@ class RFQViewSet(viewsets.ModelViewSet):
         """Get RFQ responses and quotes"""
         rfq = self.get_object()
         quotes = rfq.quotes.all()
+        from quotes.serializers import QuoteSerializer
         serializer = QuoteSerializer(quotes, many=True)
         return Response(serializer.data)
     
