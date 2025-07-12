@@ -77,18 +77,16 @@ class AuthViewSet(viewsets.ViewSet):
             )
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    """Custom token serializer with additional user data"""
-    
     def validate(self, attrs):
-        data = super().validate(attrs)
-        
-        # Add custom claims
-        data['username'] = self.user.username
-        data['email'] = self.user.email
-        data['is_staff'] = self.user.is_staff
-        
-        return data
+        # Allow login with email
+        email = attrs.get("username")  # still comes as 'username' from the request
+        try:
+            user = User.objects.get(email=email)
+            attrs["username"] = user.username  # override with actual username
+        except User.DoesNotExist:
+            pass  # Let JWT handle the error normally
 
+        return super().validate(attrs)
 class CustomTokenObtainPairView(TokenObtainPairView):
     """Custom token view"""
     serializer_class = CustomTokenObtainPairSerializer

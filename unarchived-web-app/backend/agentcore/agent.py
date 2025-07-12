@@ -1,5 +1,6 @@
 from langchain_community.chat_models import ChatOpenAI
 from langchain.agents import initialize_agent
+from decouple import config
 
 from langchain.agents import Tool
 from langchain_community.chat_message_histories import RedisChatMessageHistory
@@ -19,8 +20,11 @@ def get_memory(session_id):
     return memory
 
 def create_co_pilot_agent(session_id, user):
-    llm = ChatOpenAI(model_name="gpt-4", temperature=0)
-
+    llm = ChatOpenAI(
+        model_name=config("OPENAI_MODEL", default="gpt-4"),
+        openai_api_key=config("OPENAI_API_KEY"),
+        temperature=0
+    )
     def create_dpg_tool(parsed_text: str) -> str:
         dpg = DigitalProductGenome.objects.create(
             title="Auto-generated DPG",
