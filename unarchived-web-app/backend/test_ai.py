@@ -15,7 +15,7 @@ load_dotenv('env')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
 django.setup()
 
-from ai.ai_agent import sourcing_agent
+from agentcore.ai_agent import sourcing_agent
 
 def test_ai_response():
     """Test basic AI response functionality"""

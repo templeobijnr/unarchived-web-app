@@ -24,7 +24,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     
     # Custom apps
-    'ai',
+    'agentcore',
     
     'chat',
     'dpgs',
@@ -169,7 +169,7 @@ OPENAI_MODEL = config('OPENAI_MODEL', default='gpt-4o-mini')
 
 
 # Google Cloud Vision API
-# Make sure GOOGLE_APPLICATION_CREDENTIALS env variable is set to your service account path
+GOOGLE_APPLICATION_CREDENTIALS = config('GOOGLE_APPLICATION_CREDENTIALS')
 
 # Celery settings
 CELERY_BROKER_URL = 'redis://localhost:6379/0'

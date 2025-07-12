@@ -1,5 +1,7 @@
 from langchain_core.tools import tool
 
+
+
 @tool
 def file_parser_tool(file_content: str) -> dict:
     '''Parse raw file content into structured components.'''

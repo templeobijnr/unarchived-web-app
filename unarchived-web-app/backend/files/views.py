@@ -11,4 +11,4 @@ class UploadedFileViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         instance = serializer.save(user=self.request.user)
-        run_ocr_on_file.delay(instance.id)
+        run_ocr_on_file(instance.id)  # 👈 calls directly, skips Celery
