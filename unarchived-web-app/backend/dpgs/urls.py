@@ -1,10 +1,7 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from .views import DigitalProductGenomeViewSet
 
-router = DefaultRouter()
-router.register(r'dpgs', DigitalProductGenomeViewSet)
+from django.urls import path
+from .views import GenerateDPGFromPromptAndImage
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path("generate_from_prompt_and_image/", GenerateDPGFromPromptAndImage.as_view()),
 ]

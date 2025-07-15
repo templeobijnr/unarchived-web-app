@@ -1,0 +1,46 @@
+""" class GenerateDPGFromPromptAndImage(APIView):
+    parser_classes = [MultiPartParser, FormParser]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        prompt = request.data.get('prompt')
+        image = request.data.get('image')
+
+        if not prompt or not image:
+            return Response({"error": "Both prompt and image are required"}, status=400)
+
+        # Save temp image and run OCR inline
+        with tempfile.NamedTemporaryFile(delete=False) as temp:
+            for chunk in image.chunks():
+                temp.write(chunk)
+            temp_path = temp.name
+        credentials = service_account.Credentials.from_service_account_file(
+            r"C:\Users\king vynes\Desktop\unarchived-web-app\unarchived-web-app\backend\service-accounts\unarchived-ocr-key.json"
+        )
+        client = vision.ImageAnnotatorClient(credentials=credentials)
+        #client = vision.ImageAnnotatorClient()
+        with open(temp_path, 'rb') as img_file:
+            content = img_file.read()
+        image_obj = types.Image(content=content)
+        response = client.document_text_detection(image=image_obj)
+
+        if response.error.message:
+            return Response({"error": response.error.message}, status=500)
+
+        ocr_text = response.full_text_annotation.text
+
+        # Combine prompt + OCR text into one input
+        full_prompt = f"{prompt}\n\nImage text:\n{ocr_text}"
+
+        dpg_data = dpg_builder_tool.invoke(full_prompt)
+
+        dpg = DigitalProductGenome.objects.create(
+            title=dpg_data.get("title"),
+            version=dpg_data.get("version", "1.0"),
+            data=dpg_data.get("data", {}),
+            stage=dpg_data.get("stage", "created"),
+            owner=request.user
+        )
+
+        return Response(DigitalProductGenomeSerializer(dpg).data, status=201)
+        """

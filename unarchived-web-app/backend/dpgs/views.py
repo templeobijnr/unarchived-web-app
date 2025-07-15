@@ -15,3 +15,57 @@ class DigitalProductGenomeViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
+
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.permissions import IsAuthenticated
+from files.models import UploadedFile
+from files.tasks import run_ocr_on_file
+from agentcore.tools import dpg_builder_tool
+from .models import DigitalProductGenome
+from .serializers import DigitalProductGenomeSerializer
+import tempfile
+from google.cloud import vision
+from google.cloud.vision_v1 import types
+from google.oauth2 import service_account
+
+
+
+
+from PIL import Image
+import pytesseract
+from io import BytesIO
+
+class GenerateDPGFromPromptAndImage(APIView):
+    parser_classes = [MultiPartParser, FormParser]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        prompt = request.data.get('prompt')
+        image = request.data.get('image')
+
+        if not prompt or not image:
+            return Response({"error": "Both prompt and image are required"}, status=400)
+
+        try:
+            image = Image.open(BytesIO(image.read()))
+            ocr_text = pytesseract.image_to_string(image)
+        except Exception as e:
+            return Response({"error": f"OCR failed: {str(e)}"}, status=500)
+
+        # Combine prompt + OCR text
+        full_prompt = f"{prompt}\n\nImage text:\n{ocr_text}"
+
+        dpg_data = dpg_builder_tool.invoke(full_prompt)
+
+        dpg = DigitalProductGenome.objects.create(
+            title=dpg_data.get("title"),
+            version=dpg_data.get("version", "1.0"),
+            data=dpg_data.get("data", {}),
+            stage=dpg_data.get("stage", "created"),
+            owner=request.user
+        )
+
+        return Response(DigitalProductGenomeSerializer(dpg).data, status=201)

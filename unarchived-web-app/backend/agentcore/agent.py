@@ -12,7 +12,7 @@ from dpgs.models import DigitalProductGenome
 import os
 
 def get_memory(session_id):
-    redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    redis_url = config("REDIS_URL", default="redis://localhost:6379")
     history = RedisChatMessageHistory(session_id=session_id, url=redis_url)
     memory = ConversationBufferMemory(
         memory_key="chat_history", return_messages=True, chat_memory=history
