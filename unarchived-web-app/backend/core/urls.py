@@ -29,7 +29,7 @@ urlpatterns = [
     path('test/', include('test.urls')),
     path("api/files/", include("files.urls")),
     path('api/ai/', include('agentcore.urls')),
-     path('api/dpgs/', include('dpgs.urls')), 
+    path('api/dpgs/', include('dpgs.urls')), 
     
 
 

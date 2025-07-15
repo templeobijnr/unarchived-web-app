@@ -1,4 +1,4 @@
-
+from django.http import JsonResponse
 from rest_framework import viewsets, permissions, filters
 from .models import DigitalProductGenome
 from .serializers import DigitalProductGenomeSerializer
@@ -63,9 +63,28 @@ class GenerateDPGFromPromptAndImage(APIView):
         dpg = DigitalProductGenome.objects.create(
             title=dpg_data.get("title"),
             version=dpg_data.get("version", "1.0"),
-            data=dpg_data.get("data", {}),
+            summary=dpg_data["data"].get("summary", ""),  # ✅ Save summary outside
+            data={k: v for k, v in dpg_data["data"].items() if k != "summary"},  # ✅ Remove summary from data
             stage=dpg_data.get("stage", "created"),
             owner=request.user
         )
-
         return Response(DigitalProductGenomeSerializer(dpg).data, status=201)
+    
+    
+class ExportDPG(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            dpg = DigitalProductGenome.objects.get(pk=pk, owner=request.user)
+            return JsonResponse({
+                "title": dpg.title,
+                "version": dpg.version,
+                "stage": dpg.stage,
+                "data": dpg.data,
+                "owner_id": dpg.owner.id,
+                "created_at": dpg.created_at.isoformat(),
+                "updated_at": dpg.updated_at.isoformat(),
+            }, json_dumps_params={'indent': 4})
+        except DigitalProductGenome.DoesNotExist:
+            return JsonResponse({"error": "DPG not found"}, status=404)

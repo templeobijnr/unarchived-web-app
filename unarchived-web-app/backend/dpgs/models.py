@@ -13,6 +13,7 @@ class DigitalProductGenome(models.Model):
     description = models.TextField(blank=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='dpgs')
     version = models.CharField(max_length=20, default='1.0')
+    summary = models.TextField(blank=True)
     data = models.JSONField(default=dict)
     stage = models.CharField(max_length=20, choices=LIFECYCLE_STAGES, default='created')
     created_at = models.DateTimeField(auto_now_add=True)
