@@ -7,6 +7,7 @@ from rest_framework.decorators import action
 from rest_framework.request import Request
 
 from . import agent
+from .tools import file_parser_tool, dpg_builder_tool, rfq_generator_tool
 
 class AIChatViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
