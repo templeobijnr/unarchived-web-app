@@ -38,3 +38,29 @@ class UpcomingDeadlineSerializer(serializers.Serializer):
     deadline = serializers.DateTimeField()
     days_remaining = serializers.IntegerField()
     status = serializers.CharField() 
+
+class ProjectSerializer(serializers.ModelSerializer):
+    role = serializers.SerializerMethodField()
+    dpg_count = serializers.IntegerField(read_only=True, default=0)
+    file_count = serializers.IntegerField(read_only=True, default=0)
+
+    class Meta:
+        model = Project
+        fields = [
+            'id', 'name', 'description', 'owner', 'parent', 'created_at', 
+            'updated_at', 'role', 'dpg_count', 'file_count'
+        ]
+        read_only_fields = ['owner', 'created_at', 'updated_at']
+
+    def get_role(self, obj):
+        user = self.context['request'].user
+        try:
+            return obj.projectmember_set.get(user=user).role
+        except ProjectMember.DoesNotExist:
+            return None
+
+class ProjectMemberSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectMember
+        fields = ['id', 'project', 'user', 'role']
+        read_only_fields = ['project']
