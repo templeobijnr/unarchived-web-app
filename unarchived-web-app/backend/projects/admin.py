@@ -1,6 +1,8 @@
 from django.contrib import admin
 from .models import (
-     KPI, 
+     Project,
+     ProjectMember,
+     ProjectStage,
 )
 
 # Custom Admin Views for better usability
@@ -8,5 +10,6 @@ from .models import (
 
 # Register other models directly for simplicity
 
-
-admin.site.register(KPI)
+admin.site.register(Project)
+admin.site.register(ProjectMember)
+admin.site.register(ProjectStage)
