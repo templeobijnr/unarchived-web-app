@@ -1,6 +1,6 @@
 from rest_framework.test import APITestCase
 from django.contrib.auth.models import User
-from projects.models import Project, ProjectMember
+from projects.models import Project, ProjectMember, ProjectStage
 from rest_framework.authtoken.models import Token
 
 class ProjectAPITest(APITestCase):
@@ -11,9 +11,12 @@ class ProjectAPITest(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
 
     def test_create_project(self):
+        stage = ProjectStage.objects.create(name="Ideation", order=1)
         response = self.client.post("/api/projects/", {
             "name": "Unarchived Core",
-            "description": "DPG + RFQ System"
+            "description": "DPG + RFQ System",
+            "stage": stage.name,
+            "status": "ACTIVE"
         }, format='json')
         print("Create response:", response.data)
         self.assertEqual(response.status_code, 201)
@@ -21,7 +24,7 @@ class ProjectAPITest(APITestCase):
 
     def test_list_projects(self):
         project = Project.objects.create(name="Proj A", description="Test", owner=self.user)
-        ProjectMember.objects.create(user=self.user, project=project, role="owner")
+        ProjectMember.objects.create(user=self.user, project=project, role=ProjectMember.MemberRole.OWNER)
         response = self.client.get("/api/projects/")
         print("List response:", response.data)
         self.assertEqual(response.status_code, 200)
@@ -31,7 +34,7 @@ class ProjectAPITest(APITestCase):
     def test_role_assignment(self):
         Project.objects.all().delete()
         project = Project.objects.create(name="Test Project", description="123", owner=self.user)
-        ProjectMember.objects.create(user=self.user, project=project, role="owner")
+        ProjectMember.objects.create(user=self.user, project=project, role=ProjectMember.MemberRole.OWNER)
         response = self.client.get("/api/projects/")
         self.assertEqual(response.status_code, 200)
         projects = response.data
@@ -40,8 +43,8 @@ class ProjectAPITest(APITestCase):
 
         self.assertGreater(len(projects), 0)
         print("Role response:", response.data)
-        project_data = response.data['results'][0]  # Access paginated results
-        self.assertEqual(project_data['role'], 'owner')
+        project_data = response.data['results'][0]  
+        self.assertEqual(project_data['role'], 'OWNER')
 
 class ProjectMemberTest(APITestCase):
 
@@ -50,7 +53,7 @@ class ProjectMemberTest(APITestCase):
         self.editor = User.objects.create_user(username="editor", password="test123")
         self.viewer = User.objects.create_user(username="viewer", password="test123")
         self.project = Project.objects.create(name="Collab Project", description="With Members", owner=self.owner)
-        ProjectMember.objects.create(user=self.owner, project=self.project, role="owner")
+        ProjectMember.objects.create(user=self.owner, project=self.project, role=ProjectMember.MemberRole.OWNER)
 
         self.token = Token.objects.create(user=self.owner)
         self.not_owner = Token.objects.create(user=self.viewer)
@@ -59,23 +62,23 @@ class ProjectMemberTest(APITestCase):
     def test_add_member(self):
         res = self.client.post(f"/api/projects/{self.project.id}/add_member/", {
             "user": self.editor.id,
-            "role": "editor"
+            "role": ProjectMember.MemberRole.EDITOR
         }, format='json')
         print("Add Member Response:", res.data)
         self.assertEqual(res.status_code, 201)
         self.assertEqual(ProjectMember.objects.count(), 2)
 
     def test_update_member_role(self):
-        ProjectMember.objects.create(user=self.editor, project=self.project, role="viewer")
+        ProjectMember.objects.create(user=self.editor, project=self.project, role=ProjectMember.MemberRole.VIEWER)
         res = self.client.patch(f"/api/projects/{self.project.id}/update_member/", {
             "user": self.editor.id,
-            "role": "editor"
+            "role": ProjectMember.MemberRole.EDITOR
         }, format='json')
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(ProjectMember.objects.get(user=self.editor).role, "editor")
+        self.assertEqual(ProjectMember.objects.get(user=self.editor).role, ProjectMember.MemberRole.EDITOR)
 
     def test_remove_member(self):
-        ProjectMember.objects.create(user=self.viewer, project=self.project, role="viewer")
+        ProjectMember.objects.create(user=self.viewer, project=self.project, role=ProjectMember.MemberRole.VIEWER)
         res = self.client.delete(f"/api/projects/{self.project.id}/remove_member/", {
             "user": self.viewer.id
         }, format='json')
@@ -88,7 +91,7 @@ class ProjectMemberTest(APITestCase):
     
         # Owner creates a new project and adds themselves
         project = Project.objects.create(name="Restricted Project", description="Owner Only", owner=self.owner)
-        ProjectMember.objects.create(user=self.owner, project=project, role="owner")
+        ProjectMember.objects.create(user=self.owner, project=project, role=ProjectMember.MemberRole.OWNER)
     
         # Now act as intruder (not part of the project)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + intruder_token.key)
@@ -105,7 +108,7 @@ class ProjectMemberTest(APITestCase):
     
     def test_only_owner_can_update_role(self):
         # Creating editor, adding to project
-        ProjectMember.objects.create(user=self.editor, project=self.project, role="editor")
+        ProjectMember.objects.create(user=self.editor, project=self.project, role=ProjectMember.MemberRole.EDITOR)
 
         # Logging in as editor
         editor_token = Token.objects.create(user=self.editor)
@@ -114,8 +117,8 @@ class ProjectMemberTest(APITestCase):
         # Try to update their role
         res = self.client.patch(f"/api/projects/{self.project.id}/update_member/", {
             "user": self.editor.id,
-            "role": "owner"
+            "role": ProjectMember.MemberRole.OWNER
         }, format='json')
 
         self.assertEqual(res.status_code, 403)
-        self.assertEqual(ProjectMember.objects.get(user=self.editor).role, "editor")
+        self.assertEqual(ProjectMember.objects.get(user=self.editor).role, ProjectMember.MemberRole.EDITOR)

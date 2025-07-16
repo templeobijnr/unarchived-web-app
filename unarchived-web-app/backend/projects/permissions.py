@@ -15,9 +15,9 @@ class IsProjectMember(permissions.BasePermission):
             member = ProjectMember.objects.get(user=request.user, project=obj)
             if request.method in permissions.SAFE_METHODS:
                 return True  # All roles can read
-            elif member.role == 'owner':
+            elif member.role == ProjectMember.MemberRole.OWNER:
                 return True  # Owner has full access
-            elif member.role == 'editor':
+            elif member.role == ProjectMember.MemberRole.EDITOR:
                 return request.method in ['PUT', 'PATCH']
             else:  # viewer
                 return False
@@ -31,10 +31,12 @@ class IsProjectOwner(permissions.BasePermission):
         if view.kwargs.get('pk'):
             try:
                 project = Project.objects.get(pk=view.kwargs['pk'])
-                return ProjectMember.objects.filter(user=request.user, project=project, role='owner').exists()
+                return ProjectMember.objects.filter(user=request.user, project=project, role=ProjectMember.MemberRole.OWNER).exists()
             except Project.DoesNotExist:
                 return False
         return False
     
     def has_object_permission(self, request, view, obj):
-        return ProjectMember.objects.filter(user=request.user, project=obj, role='owner').exists()
+        return ProjectMember.objects.filter(
+            project=obj, user=request.user, role=ProjectMember.MemberRole.OWNER
+        ).exists()
