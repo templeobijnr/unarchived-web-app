@@ -2,5 +2,4 @@
 # Ignore environment files
 .env
 __pycache__/
-*.py[cod]
-
+*.pyc
