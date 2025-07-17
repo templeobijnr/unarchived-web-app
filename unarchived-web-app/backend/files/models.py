@@ -1,20 +1,49 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
+from projects.models import Project
 
 class UploadedFile(models.Model):
-    FILE_TYPES = [
-        ('pdf', 'PDF'),
-        ('image', 'Image'),
-        ('docx', 'DOCX'),
-        ('xlsx', 'XLSX'),
-    ]
+    """Represents any single file uploaded by a user to the system."""
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    file = models.FileField(upload_to='uploads/')
-    file_type = models.CharField(max_length=10, choices=FILE_TYPES)
-    parsed_output = models.JSONField(null=True, blank=True)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="files")
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="uploaded_files"
+    )
+
+    file = models.FileField(upload_to='project_files/')
+
+    original_filename = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="The name of the file as it was on the user's computer."
+    )
+    file_type = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="The MIME type of the file, e.g., 'application/pdf', 'image/jpeg'."
+    )
+    size = models.PositiveIntegerField(
+        help_text="File size in bytes."
+    )
+
+    # --- Status for AI Processing ---
+    class ProcessingStatus(models.TextChoices):
+        PENDING = 'PENDING', 'Pending Upload'
+        UPLOADED = 'UPLOADED', 'Uploaded'
+        PROCESSING = 'PROCESSING', 'AI Processing'
+        COMPLETED = 'COMPLETED', 'Processing Complete'
+        FAILED = 'FAILED', 'Processing Failed'
+
+    status = models.CharField(
+        max_length=20,
+        choices=ProcessingStatus.choices,
+        default=ProcessingStatus.UPLOADED
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=50, default='uploaded')  # uploaded, processing, done, failed
 
     def __str__(self):
-        return f"{self.file.name} - {self.file_type}"
+        return self.original_filename

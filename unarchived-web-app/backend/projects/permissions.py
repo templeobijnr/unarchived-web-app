@@ -23,6 +23,12 @@ class IsProjectMember(permissions.BasePermission):
                 return False
         except ProjectMember.DoesNotExist:
             return False
+    
+    def has_permission(self, request, view):
+        project_pk = view.kwargs.get('project_pk')
+        if not project_pk:
+            return False
+        return ProjectMember.objects.filter(user=request.user, project_id=project_pk).exists()
 
 class IsProjectOwner(permissions.BasePermission):
 

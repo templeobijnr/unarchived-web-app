@@ -27,7 +27,7 @@ urlpatterns = [
     path('api/chat/', include('chat.urls')),
     path('api/projects/', include('projects.urls')),
     path('test/', include('test.urls')),
-    path("api/files/", include("files.urls")),
+    path("api/", include("files.urls")),
     path('api/ai/', include('agentcore.urls')),
     path('api/dpgs/', include('dpgs.urls')), 
     
