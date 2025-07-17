@@ -1,14 +1,60 @@
-
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, status, serializers
+from rest_framework.response import Response
+from rest_framework.decorators import action
+from rest_framework.parsers import MultiPartParser, FormParser
+from django.shortcuts import get_object_or_404
+from projects.models import Project, ProjectMember
 from .models import UploadedFile
-from .serializers import UploadedFileSerializer
-from .tasks import run_ocr_on_file
+from rest_framework.views import APIView
+from django.http import Http404
+from django.conf import settings
+import boto3
+from .serializers import FileSerializer
+from projects.permissions import IsProjectMember
+import mimetypes
+from rest_framework.exceptions import PermissionDenied
 
-class UploadedFileViewSet(viewsets.ModelViewSet):
-    queryset = UploadedFile.objects.all()
-    serializer_class = UploadedFileSerializer
+class ProjectFileViewSet(viewsets.ModelViewSet):
+    serializer_class = FileSerializer
+    parser_classes = [MultiPartParser, FormParser]
+    permission_classes = [permissions.IsAuthenticated, IsProjectMember]
+
+    def get_queryset(self):
+        project_id = self.kwargs.get('project_pk')
+        if not ProjectMember.objects.filter(user=self.request.user, project_id=project_id).exists():
+            raise PermissionDenied("You are not a member of this project.")
+        return UploadedFile.objects.filter(project__id=project_id).order_by('-created_at')
+
+    def create(self, request, *args, **kwargs):
+        project = get_object_or_404(Project, pk=self.kwargs.get('project_pk'))
+        files = request.FILES.getlist('file')
+
+        if not files:
+            return Response({"detail": "No files uploaded."}, status=status.HTTP_400_BAD_REQUEST)
+
+        for file in files:
+            mime_type, _ = mimetypes.guess_type(file.name)
+            serializer = FileSerializer(data={
+                'project': project.pk,
+                'file': file,
+                'original_filename': file.name,
+                'file_type': mime_type or '',
+                'size': file.size
+            })
+            serializer.is_valid(raise_exception=True)
+            serializer.save(uploaded_by=request.user)
+
+        return Response({'detail': 'File(s) uploaded successfully'}, status=status.HTTP_201_CREATED)
+
+
+class FileDeleteView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def perform_create(self, serializer):
-        instance = serializer.save(user=self.request.user)
-        run_ocr_on_file(instance.id)  # 👈 calls directly, skips Celery
+    def delete(self, request, pk):
+        try:
+            file = UploadedFile.objects.get(pk=pk)
+            file.file.delete(save=False)  # Delete from S3
+            file.delete()
+            return Response({'detail': 'File deleted.'}, status=status.HTTP_204_NO_CONTENT)
+        except UploadedFile.DoesNotExist:
+            raise Http404

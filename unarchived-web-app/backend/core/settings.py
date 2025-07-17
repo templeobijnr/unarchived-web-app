@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework.authtoken",
+    "storages",
     "corsheaders",
     "rest_framework_simplejwt",
     
@@ -36,6 +37,17 @@ INSTALLED_APPS = [
     'suppliers',
     'users',
 ]
+
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY')
+AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME')
+AWS_S3_REGION_NAME = config('AWS_S3_REGION_NAME')
+AWS_S3_CUSTOM_DOMAIN = config('AWS_S3_CUSTOM_DOMAIN', default=None)
+
+AWS_QUERYSTRING_AUTH = False  # Makes uploaded files public by default (optional)
+AWS_DEFAULT_ACL = None  # Required by newer S3 setups
 
 # Middleware
 MIDDLEWARE = [
