@@ -22,7 +22,6 @@ from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
 from files.models import UploadedFile
-from files.tasks import run_ocr_on_file
 from agentcore.tools import dpg_builder_tool
 from .models import DigitalProductGenome
 from .serializers import DigitalProductGenomeSerializer
@@ -30,8 +29,6 @@ import tempfile
 from google.cloud import vision
 from google.cloud.vision_v1 import types
 from google.oauth2 import service_account
-
-
 
 
 from PIL import Image
