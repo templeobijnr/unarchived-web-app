@@ -6,8 +6,11 @@ from .models import *
 from .serializers import *
 from rest_framework.exceptions import PermissionDenied
 import logging
-
+from agentcore.agent import ConversationalAgent
 logger = logging.getLogger(__name__)
+from rest_framework.decorators import action
+from chat.models import Message, Conversation
+from chat.serializers import MessageSerializer, ConversationSerializer
 
 class MessagePagination(PageNumberPagination):
     page_size = 20
@@ -47,6 +50,59 @@ class MessageViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("You cannot delete this message.")
         instance.delete()
         logger.info(f"Message deleted by user {self.request.user.id}")
+    
+    @action(detail=False, methods=['post'], url_path='ai-chat')
+    def ai_chat(self, request):
+        """
+        Bridge endpoint: Accepts a user message, runs the agent, and saves both user and AI messages.
+        Expects: {"conversation": <id>, "content": <user_message>}
+        """
+        user = request.user
+        conversation_id = request.data.get("conversation")
+        content = request.data.get("content", "")
+
+        # 1. Fetch conversation and history
+        try:
+            conversation = Conversation.objects.get(id=conversation_id, participants=user)
+        except Conversation.DoesNotExist:
+            return Response({"error": "Conversation not found."}, status=404)
+
+        # 2. Save user message
+        user_msg = Message.objects.create(
+            author="user",
+            content=content,
+            conversation=conversation,
+            user=user
+        )
+
+        # 3. Build agent history
+        history = [
+            {"role": "user" if m.author == "user" else "assistant", "content": m.content}
+            for m in Message.objects.filter(conversation=conversation).order_by("timestamp")
+        ]
+
+        # 4. Call the agent
+        agent = ConversationalAgent()
+        agent.conversation_history = history[:-1]  # All except the new user message
+        result = agent.chat(content)
+
+        # 5. Save AI response
+        ai_msg = Message.objects.create(
+            author="ai",
+            content=result.get("response", ""),
+            conversation=conversation,
+            user=user,
+            ai_confidence=result.get("context", {}).get("ai_confidence"),
+            ai_version="gpt-4"  # Or extract from agent if available
+        )
+
+        # 6. Return both messages and suggestions
+        return Response({
+            "user_message": MessageSerializer(user_msg).data,
+            "ai_message": MessageSerializer(ai_msg).data,
+            "suggestions": result.get("suggestions", []),
+            "context": result.get("context", {})
+        })
 
 class ConversationViewSet(viewsets.ModelViewSet):
     queryset = Conversation.objects.all()

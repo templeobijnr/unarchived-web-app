@@ -3,6 +3,7 @@ from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from django.contrib.auth import get_user_model
 from chat.models import Message, Conversation
+from unittest import mock
 
 User = get_user_model()
 
@@ -113,3 +114,51 @@ class ChatAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertGreaterEqual(len(response.data), 1)
         self.assertIn(self.user1.id, response.data["results"][0]["participants"])
+
+    @mock.patch("agentcore.agent.ConversationalAgent.chat")
+    def test_ai_chat_bridge_success(self, mock_agent_chat):
+        # Mock agent response
+        mock_agent_chat.return_value = {
+            "response": "Here is your DPG.",
+            "suggestions": ["Next: Generate an RFQ"],
+            "context": {"ai_confidence": 0.95, "ai_version": "gpt-4"}
+        }
+        url = reverse("message-ai-chat")
+        data = {
+            "conversation": self.conversation.id,
+            "content": "Can you help me create a DPG for a blue backpack?"
+        }
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("ai_message", response.data)
+        self.assertIn("user_message", response.data)
+        self.assertIn("suggestions", response.data)
+        self.assertIn("context", response.data)
+        # Check AI metadata
+        self.assertEqual(response.data["ai_message"]["ai_confidence"], 0.95)
+        self.assertEqual(response.data["ai_message"]["ai_version"], "gpt-4")
+        # Check conversation linking
+        self.assertEqual(response.data["user_message"]["conversation"], self.conversation.id)
+        self.assertEqual(response.data["ai_message"]["conversation"], self.conversation.id)
+
+    def test_ai_chat_bridge_invalid_conversation(self):
+        url = reverse("message-ai-chat")
+        data = {
+            "conversation": 9999,  # Non-existent
+            "content": "Test"
+        }
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 404)
+        self.assertIn("error", response.data)
+
+    def test_ai_chat_bridge_security(self):
+        # Create a conversation user1 is NOT a participant of
+        convo = Conversation.objects.create()
+        convo.participants.set([self.user2])
+        url = reverse("message-ai-chat")
+        data = {
+            "conversation": convo.id,
+            "content": "Should not work"
+        }
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 404)
