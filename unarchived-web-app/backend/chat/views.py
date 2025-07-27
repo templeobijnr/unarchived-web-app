@@ -1,4 +1,6 @@
 # Auto-split from original views.py
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render
 from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
@@ -111,3 +113,10 @@ class ConversationViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return Conversation.objects.filter(participants=self.request.user)
+    
+    
+@login_required
+def chat_test_view(request):
+    return render(request, 'test_interface.html', {
+        'user': request.user
+    })

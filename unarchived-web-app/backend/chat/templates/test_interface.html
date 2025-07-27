@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat Testing Interface</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <style>
+        .message-content {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .loading-dots {
+            animation: loading 1.4s infinite ease-in-out;
+        }
+        .loading-dots:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dots:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes loading {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 h-screen">
+    <!-- CSRF Token -->
+    {% csrf_token %}
+    
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="w-80 bg-white border-r border-gray-200 flex flex-col">
+            <!-- Header -->
+            <div class="p-4 border-b border-gray-200">
+                <div class="flex items-center justify-between mb-4">
+                    <h1 class="text-xl font-bold text-gray-800">AI Chat Testing</h1>
+                    <button id="settingsBtn" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- Settings Panel -->
+                <div id="settingsPanel" class="hidden space-y-3 p-3 bg-gray-50 rounded-lg mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">User ID</label>
+                        <input type="number" id="userId" value="{{ user.id|default:'1' }}" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">API Debug</label>
+                        <input type="checkbox" id="debugMode" class="mr-2">
+                        <span class="text-sm">Show API responses</span>
+                    </div>
+                </div>
+                
+                <button id="newConversationBtn" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    New Conversation
+                </button>
+            </div>
+
+            <!-- Conversations List -->
+            <div class="flex-1 overflow-y-auto scrollbar-hide" id="conversationsList">
+                <!-- Conversations will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Main Chat Area -->
+        <div class="flex-1 flex flex-col">
+            <!-- No Conversation Selected State -->
+            <div id="noConversationState" class="flex-1 flex items-center justify-center">
+                <div class="text-center">
+                    <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                    </svg>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No Conversation Selected</h3>
+                    <p class="text-gray-500">Select an existing conversation or create a new one to start testing.</p>
+                </div>
+            </div>
+
+            <!-- Chat Interface -->
+            <div id="chatInterface" class="hidden flex-1 flex flex-col">
+                <!-- Chat Header -->
+                <div class="p-4 bg-white border-b border-gray-200">
+                    <h2 id="conversationTitle" class="text-lg font-semibold text-gray-800"></h2>
+                    <p class="text-sm text-gray-500">Unarchived AI Assistant</p>
+                </div>
+
+                <!-- Messages -->
+                <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
+                    <!-- Messages will be loaded here -->
+                </div>
+
+                <!-- File Upload Area -->
+                <div id="fileUploadArea" class="hidden px-4 py-2 bg-gray-50 border-t border-gray-200">
+                    <div id="filesList" class="flex flex-wrap gap-2">
+                        <!-- Uploaded files will appear here -->
+                    </div>
+                </div>
+
+                <!-- Message Input -->
+                <div class="p-4 bg-white border-t border-gray-200">
+                    <div class="flex gap-3 items-end">
+                        <input type="file" multiple id="fileInput" class="hidden" accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif">
+                        <label for="fileInput" class="p-2 text-gray-500 hover:text-gray-700 cursor-pointer transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                            </svg>
+                        </label>
+                        
+                        <div class="flex-1">
+                            <textarea
+                                id="messageInput"
+                                placeholder="Type your message... (Shift+Enter for new line)"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                rows="3"
+                            ></textarea>
+                        </div>
+                        
+                        <button id="sendBtn" class="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <div class="mt-2 text-xs text-gray-500">
+                        💡 Try asking about creating DPGs, generating RFQs, or upload product files
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Debug Panel -->
+    <div id="debugPanel" class="hidden fixed bottom-4 right-4 w-96 bg-white border border-gray-300 rounded-lg shadow-lg p-4 max-h-64 overflow-y-auto">
+        <div class="flex justify-between items-center mb-2">
+            <h4 class="font-semibold text-gray-800">API Debug</h4>
+            <button id="closeDebug" class="text-gray-500 hover:text-gray-700">×</button>
+        </div>
+        <pre id="debugContent" class="text-xs text-gray-600 whitespace-pre-wrap"></pre>
+    </div>
+
+    <script>
+        // Global state
+        let currentConversation = null;
+        let conversations = [];
+        let messages = [];
+        let uploadedFiles = [];
+        let isLoading = false;
+
+        // CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        // DOM elements
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsPanel = document.getElementById('settingsPanel');
+        const newConversationBtn = document.getElementById('newConversationBtn');
+        const conversationsList = document.getElementById('conversationsList');
+        const noConversationState = document.getElementById('noConversationState');
+        const chatInterface = document.getElementById('chatInterface');
+        const conversationTitle = document.getElementById('conversationTitle');
+        const messagesContainer = document.getElementById('messagesContainer');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const fileInput = document.getElementById('fileInput');
+        const fileUploadArea = document.getElementById('fileUploadArea');
+        const filesList = document.getElementById('filesList');
+        const debugPanel = document.getElementById('debugPanel');
+        const debugContent = document.getElementById('debugContent');
+        const debugMode = document.getElementById('debugMode');
+        const closeDebug = document.getElementById('closeDebug');
+
+        // Event listeners
+        settingsBtn.addEventListener('click', () => {
+            settingsPanel.classList.toggle('hidden');
+        });
+
+        newConversationBtn.addEventListener('click', createNewConversation);
+        sendBtn.addEventListener('click', sendMessage);
+        fileInput.addEventListener('change', handleFileUpload);
+        closeDebug.addEventListener('click', () => debugPanel.classList.add('hidden'));
+
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        debugMode.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                debugPanel.classList.remove('hidden');
+            } else {
+                debugPanel.classList.add('hidden');
+            }
+        });
+
+        // Utility functions
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function formatTimestamp(timestamp) {
+            return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function getConfidenceColor(confidence) {
+            if (confidence >= 0.9) return 'text-green-600';
+            if (confidence >= 0.7) return 'text-yellow-600';
+            return 'text-red-600';
+        }
+
+        function debugLog(title, data) {
+            if (debugMode.checked) {
+                const timestamp = new Date().toLocaleTimeString();
+                debugContent.textContent += `[${timestamp}] ${title}:\n${JSON.stringify(data, null, 2)}\n\n`;
+                debugContent.scrollTop = debugContent.scrollHeight;
+            }
+        }
+
+        function scrollToBottom() {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // API functions
+        async function apiRequest(url, options = {}) {
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                credentials: 'same-origin',
+            };
+
+            const mergedOptions = {
+                ...defaultOptions,
+                ...options,
+                headers: {
+                    ...defaultOptions.headers,
+                    ...options.headers,
+                },
+            };
+
+            debugLog('API Request', { url, options: mergedOptions });
+
+            try {
+                const response = await fetch(url, mergedOptions);
+                const data = await response.json();
+                
+                debugLog('API Response', { status: response.status, data });
+                
+                if (!response.ok) {
+                    throw new Error(data.detail || 'API request failed');
+                }
+                
+                return data;
+            } catch (error) {
+                debugLog('API Error', { error: error.message });
+                throw error;
+            }
+        }
+
+        // Conversation functions
+        async function loadConversations() {
+            try {
+                const data = await apiRequest('/api/chat/conversations/');
+                conversations = data.results || data;
+                renderConversations();
+            } catch (error) {
+                console.error('Failed to load conversations:', error);
+                // Show mock data for testing
+                conversations = [
+                    { id: 1, title: 'Handbag Product Development', created_at: '2025-01-26T10:00:00Z' },
+                    { id: 2, title: 'Electronics Sourcing', created_at: '2025-01-25T15:30:00Z' }
+                ];
+                renderConversations();
+            }
+        }
+
+        function renderConversations() {
+            conversationsList.innerHTML = conversations.map(conv => `
+                <div class="conversation-item p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${currentConversation?.id === conv.id ? 'bg-blue-50 border-l-4 border-l-blue-600' : ''}" 
+                     data-id="${conv.id}">
+                    <div class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-gray-400 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                        </svg>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="font-medium text-gray-900 truncate">${conv.title}</h3>
+                            <p class="text-sm text-gray-500">
+                                ${new Date(conv.created_at).toLocaleDateString()}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Add click listeners
+            document.querySelectorAll('.conversation-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const id = parseInt(item.dataset.id);
+                    selectConversation(id);
+                });
+            });
+        }
+
+        async function createNewConversation() {
+            try {
+                const data = await apiRequest('/api/chat/conversations/', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        title: `New Conversation ${conversations.length + 1}`,
+                        participants: [document.getElementById('userId').value]
+                    })
+                });
+                
+                conversations.unshift(data);
+                renderConversations();
+                selectConversation(data.id);
+            } catch (error) {
+                console.error('Failed to create conversation:', error);
+                // Fallback to mock conversation
+                const mockConv = {
+                    id: Date.now(),
+                    title: `New Conversation ${conversations.length + 1}`,
+                    created_at: new Date().toISOString()
+                };
+                conversations.unshift(mockConv);
+                renderConversations();
+                selectConversation(mockConv.id);
+            }
+        }
+
+        async function selectConversation(id) {
+            currentConversation = conversations.find(c => c.id === id);
+            if (!currentConversation) return;
+
+            noConversationState.classList.add('hidden');
+            chatInterface.classList.remove('hidden');
+            conversationTitle.textContent = currentConversation.title;
+
+            renderConversations(); // Re-render to show selection
+            await loadMessages();
+        }
+
+        // Message functions
+        async function loadMessages() {
+            try {
+                const data = await apiRequest(`/api/chat/messages/?conversation=${currentConversation.id}`);
+                messages = data.results || data;
+                renderMessages();
+            } catch (error) {
+                console.error('Failed to load messages:', error);
+                // Show mock messages for testing
+                if (currentConversation.id === 1) {
+                    messages = [
+                        {
+                            id: 1,
+                            author: 'user',
+                            content: 'Hi, I want to create a new handbag product. Can you help me?',
+                            timestamp: '2025-01-26T10:00:00Z'
+                        },
+                        {
+                            id: 2,
+                            author: 'ai',
+                            content: 'Hello! I\'d be happy to help you create a new handbag product. To get started, I\'ll need some information about your handbag...',
+                            timestamp: '2025-01-26T10:01:00Z',
+                            ai_confidence: 0.95
+                        }
+                    ];
+                } else {
+                    messages = [];
+                }
+                renderMessages();
+            }
+        }
+
+        function renderMessages() {
+            messagesContainer.innerHTML = messages.map(message => `
+                <div class="flex gap-3 ${message.author === 'user' ? 'justify-end' : 'justify-start'}">
+                    ${message.author === 'ai' ? `
+                        <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="max-w-3xl ${message.author === 'user' ? 'order-1' : ''}">
+                        <div class="px-4 py-2 rounded-lg ${message.author === 'user' ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200'}">
+                            <div class="message-content">${message.content}</div>
+                        </div>
+                        
+                        <div class="flex items-center gap-2 mt-1 text-xs text-gray-500 ${message.author === 'user' ? 'justify-end' : 'justify-start'}">
+                            <span>${formatTimestamp(message.timestamp)}</span>
+                            ${message.author === 'ai' && message.ai_confidence ? `
+                                <span class="font-medium ${getConfidenceColor(message.ai_confidence)}">
+                                    ${Math.round(message.ai_confidence * 100)}% confidence
+                                </span>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    ${message.author === 'user' ? `
+                        <div class="w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
+                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+
+            scrollToBottom();
+        }
+
+        function addLoadingMessage() {
+            const loadingHTML = `
+                <div id="loadingMessage" class="flex gap-3 justify-start">
+                    <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <div class="bg-white border border-gray-200 rounded-lg px-4 py-2">
+                        <div class="flex items-center gap-2">
+                            <div class="flex space-x-1">
+                                <div class="w-2 h-2 bg-gray-400 rounded-full loading-dots"></div>
+                                <div class="w-2 h-2 bg-gray-400 rounded-full loading-dots"></div>
+                                <div class="w-2 h-2 bg-gray-400 rounded-full loading-dots"></div>
+                            </div>
+                            <span class="text-gray-600">AI is thinking...</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            messagesContainer.insertAdjacentHTML('beforeend', loadingHTML);
+            scrollToBottom();
+        }
+
+        function removeLoadingMessage() {
+            const loadingMessage = document.getElementById('loadingMessage');
+            if (loadingMessage) {
+                loadingMessage.remove();
+            }
+        }
+
+        async function sendMessage() {
+            const content = messageInput.value.trim();
+            if (!content && uploadedFiles.length === 0) return;
+            if (!currentConversation) {
+                alert('Please select or create a conversation first');
+                return;
+            }
+
+            setLoading(true);
+
+            // Add user message to UI immediately
+            const userMessage = {
+                id: Date.now(),
+                author: 'user',
+                content: content,
+                timestamp: new Date().toISOString()
+            };
+            messages.push(userMessage);
+            renderMessages();
+            
+            // Clear input
+            messageInput.value = '';
+            
+            // Show loading
+            addLoadingMessage();
+
+            try {
+                const data = await apiRequest('/api/chat/messages/ai-chat/', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        conversation: currentConversation.id,
+                        content: content,
+                        files: uploadedFiles // If you want to support file uploads
+                    })
+                });
+
+                // Remove the user message we added and replace with server response
+                messages.pop();
+                messages.push(data.user_message);
+                messages.push(data.ai_message);
+                
+                removeLoadingMessage();
+                renderMessages();
+
+                // Show suggestions if any
+                if (data.suggestions && data.suggestions.length > 0) {
+                    console.log('Suggestions:', data.suggestions);
+                }
+
+            } catch (error) {
+                console.error('Failed to send message:', error);
+                removeLoadingMessage();
+                
+                // Add error message
+                const errorMessage = {
+                    id: Date.now() + 1,
+                    author: 'ai',
+                    content: 'Sorry, I encountered an error processing your message. Please try again.',
+                    timestamp: new Date().toISOString(),
+                    ai_confidence: 0.0
+                };
+                messages.push(errorMessage);
+                renderMessages();
+            }
+
+            setLoading(false);
+            clearFiles();
+        }
+
+        function setLoading(loading) {
+            isLoading = loading;
+            sendBtn.disabled = loading;
+            messageInput.disabled = loading;
+        }
+
+        // File handling
+        function handleFileUpload(event) {
+            const files = Array.from(event.target.files);
+            uploadedFiles.push(...files);
+            renderFiles();
+        }
+
+        function renderFiles() {
+            if (uploadedFiles.length === 0) {
+                fileUploadArea.classList.add('hidden');
+                return;
+            }
+
+            fileUploadArea.classList.remove('hidden');
+            filesList.innerHTML = uploadedFiles.map((file, index) => `
+                <div class="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border">
+                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <span class="text-sm text-gray-700 truncate max-w-32">${file.name}</span>
+                    <button onclick="removeFile(${index})" class="text-gray-400 hover:text-red-500">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function removeFile(index) {
+            uploadedFiles.splice(index, 1);
+            renderFiles();
+        }
+
+        function clearFiles() {
+            uploadedFiles = [];
+            fileInput.value = '';
+            renderFiles();
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadConversations();
+        });
+
+        // Make removeFile available globally
+        window.removeFile = removeFile;
+    </script>
+</body>
+</html>

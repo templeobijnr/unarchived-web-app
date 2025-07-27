@@ -1,0 +1,481 @@
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Django Auth Test UI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1rem;
+        }
+
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 5px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .auth-form {
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .response-area {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .response-area h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .response-content {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e1e5e9;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .success {
+            color: #28a745;
+            border-left-color: #28a745;
+        }
+
+        .error {
+            color: #dc3545;
+            border-left-color: #dc3545;
+        }
+
+        .user-info {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .user-info h3 {
+            margin-bottom: 15px;
+        }
+
+        .user-info p {
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .logout-section {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .logout-btn {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(220, 53, 69, 0.3);
+        }
+
+        .endpoint-url {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            margin-bottom: 15px;
+            border-left: 3px solid #667eea;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 30px 20px;
+                margin: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 Auth Test</h1>
+            <p>Test your Django authentication endpoints</p>
+        </div>
+
+        <div class="auth-tabs">
+            <div class="tab active" onclick="switchTab('session')">Session Auth</div>
+            <div class="tab" onclick="switchTab('jwt')">JWT Token</div>
+        </div>
+
+        <div id="sessionAuth" class="auth-form">
+            <div class="endpoint-url">POST /api/users/auth/login/</div>
+            <form id="sessionLoginForm">
+                <div class="form-group">
+                    <label for="sessionUsername">Username or Email:</label>
+                    <input type="text" id="sessionUsername" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="sessionPassword">Password:</label>
+                    <input type="password" id="sessionPassword" name="password" required>
+                </div>
+                <button type="submit" class="login-btn">Login with Session</button>
+            </form>
+        </div>
+
+        
+        <div class="response-area" id="responseArea" style="display: none;">
+            <h3 id="responseTitle">Response</h3>
+            <div class="response-content" id="responseContent"></div>
+        </div>
+
+        <div id="userInfo" style="display: none;"></div>
+
+        <div class="logout-section" id="logoutSection" style="display: none;">
+            <button class="logout-btn" onclick="logout()">Logout</button>
+            <button class="logout-btn" onclick="getCurrentUser()" style="background: linear-gradient(135deg, #17a2b8, #138496); margin-left: 10px;">Get User Info</button>
+        </div>
+    </div>
+
+    <script>
+        let currentAuthType = 'session';
+        let authToken = null;
+        let baseURL = 'http://127.0.0.1:8000/api'; // Updated to match your API structure
+
+        function switchTab(authType) {
+            currentAuthType = authType;
+            
+            // Update tab appearance
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Switch forms
+            if (authType === 'session') {
+                document.getElementById('sessionAuth').style.display = 'block';
+                document.getElementById('jwtAuth').style.display = 'none';
+            } else {
+                document.getElementById('sessionAuth').style.display = 'none';
+                document.getElementById('jwtAuth').style.display = 'block';
+            }
+        }
+
+        function showResponse(title, content, isError = false) {
+            const responseArea = document.getElementById('responseArea');
+            const responseTitle = document.getElementById('responseTitle');
+            const responseContent = document.getElementById('responseContent');
+            
+            responseArea.style.display = 'block';
+            responseTitle.textContent = title;
+            responseContent.textContent = JSON.stringify(content, null, 2);
+            
+            if (isError) {
+                responseArea.className = 'response-area error';
+            } else {
+                responseArea.className = 'response-area success';
+            }
+        }
+
+        function showUserInfo(userData) {
+            const userInfo = document.getElementById('userInfo');
+            userInfo.innerHTML = `
+                <div class="user-info">
+                    <h3>👤 User Information</h3>
+                    <p><strong>ID:</strong> ${userData.id}</p>
+                    <p><strong>Username:</strong> ${userData.username}</p>
+                    <p><strong>Email:</strong> ${userData.email}</p>
+                    <p><strong>First Name:</strong> ${userData.first_name || 'Not set'}</p>
+                    <p><strong>Last Name:</strong> ${userData.last_name || 'Not set'}</p>
+                </div>
+            `;
+            userInfo.style.display = 'block';
+            document.getElementById('logoutSection').style.display = 'block';
+        }
+
+        // Session Login
+        document.getElementById('sessionLoginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = {
+                username: formData.get('username'),
+                password: formData.get('password')
+            };
+            
+            try {
+                const response = await fetch(`${baseURL}/users/auth/login/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResponse('✅ Session Login Success', result);
+                    showUserInfo(result.user);
+                } else {
+                    showResponse('❌ Session Login Failed', result, true);
+                }
+            } catch (error) {
+                showResponse('❌ Network Error', { error: error.message }, true);
+            }
+        });
+
+        // JWT Login
+        document.getElementById('jwtLoginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = {
+                username: formData.get('username'),
+                password: formData.get('password')
+            };
+            
+            try {
+                const response = await fetch(`${baseURL}/token/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    authToken = result.access;
+                    showResponse('✅ JWT Token Obtained', result);
+                    // Try to get user info with the token
+                    setTimeout(getCurrentUser, 1000);
+                } else {
+                    showResponse('❌ JWT Login Failed', result, true);
+                }
+            } catch (error) {
+                showResponse('❌ Network Error', { error: error.message }, true);
+            }
+        });
+
+        async function getCurrentUser() {
+            let headers = { 'Content-Type': 'application/json' };
+            let url = `${baseURL}/auth/user/`;
+            
+            if (currentAuthType === 'jwt' && authToken) {
+                headers['Authorization'] = `Bearer ${authToken}`;
+            }
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: headers,
+                    credentials: currentAuthType === 'session' ? 'include' : 'omit'
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResponse('✅ User Info Retrieved', result);
+                    showUserInfo(result);
+                } else {
+                    showResponse('❌ Failed to Get User Info', result, true);
+                }
+            } catch (error) {
+                showResponse('❌ Network Error', { error: error.message }, true);
+            }
+        }
+
+        async function logout() {
+            if (currentAuthType === 'session') {
+                try {
+                    const response = await fetch(`${baseURL}/auth/logout/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        },
+                        credentials: 'include'
+                    });
+                    
+                    const result = await response.json();
+                    showResponse('✅ Session Logout', result);
+                } catch (error) {
+                    showResponse('❌ Logout Error', { error: error.message }, true);
+                }
+            } else {
+                // For JWT, just clear the token
+                authToken = null;
+                showResponse('✅ JWT Token Cleared', { message: 'Token cleared from client' });
+            }
+            
+            // Hide user info and logout section
+            document.getElementById('userInfo').style.display = 'none';
+            document.getElementById('logoutSection').style.display = 'none';
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Initialize with getting CSRF token for session auth
+        window.addEventListener('load', async () => {
+            try {
+                await fetch(`${baseURL}/auth/user/`, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+            } catch (error) {
+                console.log('Initial CSRF token fetch failed:', error);
+            }
+        });
+    </script>
+</body>
+</html>

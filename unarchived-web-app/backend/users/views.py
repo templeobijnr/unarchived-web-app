@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action, api_view, permission_classes
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.db.models import Q, Count, Avg
 from datetime import datetime, timedelta
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -131,3 +131,33 @@ def register_user(request):
         return Response({
             'error': 'Failed to create user'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        
+def login_test_ui(request):
+    return render(request, 'login_test.html')
+
+
+from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import render
+
+@csrf_exempt  
+def register_user_ui(request):
+    """Handles registration from a browser form"""
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+
+        if not all([username, email, password]):
+            return render(request, 'register.html', {'error': 'All fields are required'})
+
+        if User.objects.filter(username=username).exists():
+            return render(request, 'register.html', {'error': 'Username already exists'})
+
+        if User.objects.filter(email=email).exists():
+            return render(request, 'register.html', {'error': 'Email already exists'})
+
+        user = User.objects.create_user(username=username, email=email, password=password)
+        return render(request, 'register.html', {'message': 'Registration successful!'})
+
+    return render(request, 'register.html')
