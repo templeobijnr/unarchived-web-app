@@ -780,6 +780,541 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadConversations();
         });
+        
+        // Enhanced file processing and API call functions with better debugging
+
+// Add this to your existing JavaScript in test_interface.html
+
+// Enhanced file processing with better error handling
+async function processFiles(files) {
+    const processedFiles = [];
+    
+    console.log(`Starting to process ${files.length} files`);
+    
+    for (const file of files) {
+        try {
+            console.log(`Processing file: ${file.name}, size: ${file.size}, type: ${file.type}`);
+            
+            const base64Content = await convertFileToBase64(file);
+            
+            const processedFile = {
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                base64Content: base64Content,
+                originalFile: file,
+                processed: true,
+                processingError: null
+            };
+            
+            processedFiles.push(processedFile);
+            
+            debugLog('File processed successfully', {
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                base64Length: base64Content.length,
+                sampleBase64: base64Content.substring(0, 100) + '...'
+            });
+            
+            console.log(`✓ Successfully processed: ${file.name}`);
+            
+        } catch (error) {
+            console.error(`✗ Error processing file: ${file.name}`, error);
+            const errorFile = {
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                base64Content: null,
+                originalFile: file,
+                processed: false,
+                processingError: error.message
+            };
+            processedFiles.push(errorFile);
+        }
+    }
+    
+    console.log(`Finished processing files. Successful: ${processedFiles.filter(f => f.processed).length}, Failed: ${processedFiles.filter(f => !f.processed).length}`);
+    
+    return processedFiles;
+}
+
+// Enhanced sendMessage function with better file handling
+async function sendMessage() {
+    const content = messageInput.value.trim();
+    if (!content && uploadedFiles.length === 0) return;
+    if (!currentConversation) {
+        alert('Please select or create a conversation first');
+        return;
+    }
+
+    setLoading(true);
+
+    // Add user message to UI immediately
+    const userMessage = {
+        id: Date.now(),
+        author: 'user',
+        content: content,
+        timestamp: new Date().toISOString()
+    };
+    messages.push(userMessage);
+    renderMessages();
+    
+    // Clear input
+    messageInput.value = '';
+    
+    // Show loading
+    addLoadingMessage();
+
+    try {
+        // Prepare files data for API with enhanced validation
+        const filesData = [];
+        let successfulFiles = 0;
+        let failedFiles = 0;
+        
+        for (const file of uploadedFiles) {
+            if (file.processed && file.base64Content) {
+                filesData.push({
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                    base64Content: file.base64Content,
+                    processed: file.processed
+                });
+                successfulFiles++;
+                console.log(`✓ Including file in API call: ${file.name} (${file.base64Content.length} chars)`);
+            } else {
+                failedFiles++;
+                console.warn(`✗ Skipping unprocessed/invalid file: ${file.name}`, {
+                    processed: file.processed,
+                    hasBase64: !!file.base64Content,
+                    error: file.processingError
+                });
+            }
+        }
+
+        console.log(`Sending API request with ${filesData.length} files (${successfulFiles} successful, ${failedFiles} failed)`);
+
+        debugLog('Sending message with files', {
+            content: content.substring(0, 100) + (content.length > 100 ? '...' : ''),
+            filesCount: filesData.length,
+            filesDetails: filesData.map(f => ({
+                name: f.name,
+                size: f.size,
+                type: f.type,
+                base64Length: f.base64Content ? f.base64Content.length : 0
+            }))
+        });
+
+        const requestData = {
+            conversation: currentConversation.id,
+            content: content,
+            files: filesData
+        };
+
+        const data = await apiRequest('/api/chat/messages/ai-chat/', {
+            method: 'POST',
+            body: JSON.stringify(requestData)
+        });
+
+        console.log('API response received:', {
+            userMessage: !!data.user_message,
+            aiMessage: !!data.ai_message,
+            fileResults: data.file_results ? data.file_results.length : 0,
+            suggestions: data.suggestions ? data.suggestions.length : 0
+        });
+
+        // Log file processing results
+        if (data.file_results && data.file_results.length > 0) {
+            console.log('File processing results from backend:');
+            data.file_results.forEach((result, index) => {
+                console.log(`  ${index + 1}. ${result.filename}: ${result.status}`, 
+                    result.status === 'success' ? 
+                        `(${result.extracted_text ? result.extracted_text.length : 0} chars extracted)` : 
+                        `(Error: ${result.error})`
+                );
+            });
+        }
+
+        // Remove the user message we added and replace with server response
+        messages.pop();
+        messages.push(data.user_message);
+        messages.push(data.ai_message);
+        
+        removeLoadingMessage();
+        renderMessages();
+
+        // Show suggestions if any
+        if (data.suggestions && data.suggestions.length > 0) {
+            console.log('AI Suggestions:', data.suggestions);
+            // You could show these in the UI
+        }
+
+        // Show file processing results if any
+        if (data.file_results && data.file_results.length > 0) {
+            const successfulExtractions = data.file_results.filter(r => r.status === 'success' && r.extracted_text);
+            if (successfulExtractions.length > 0) {
+                console.log(`✓ Successfully processed ${successfulExtractions.length} files and extracted text`);
+            }
+        }
+
+    } catch (error) {
+        console.error('Failed to send message:', error);
+        removeLoadingMessage();
+        
+        // Add error message
+        const errorMessage = {
+            id: Date.now() + 1,
+            author: 'ai',
+            content: `Sorry, I encountered an error processing your message: ${error.message}. Please try again.`,
+            timestamp: new Date().toISOString(),
+            ai_confidence: 0.0
+        };
+        messages.push(errorMessage);
+        renderMessages();
+    }
+
+    setLoading(false);
+    clearFiles();
+}
+
+// Enhanced convertFileToBase64 with better error handling
+async function convertFileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        if (!file) {
+            reject(new Error('No file provided'));
+            return;
+        }
+
+        if (file.size === 0) {
+            reject(new Error('File is empty'));
+            return;
+        }
+
+        // Check file size limit (e.g., 10MB)
+        const maxSize = 10 * 1024 * 1024; // 10MB
+        if (file.size > maxSize) {
+            reject(new Error(`File too large: ${formatFileSize(file.size)} (max: ${formatFileSize(maxSize)})`));
+            return;
+        }
+
+        const reader = new FileReader();
+        
+        reader.onload = () => {
+            try {
+                // Remove the data URL prefix (data:mime/type;base64,)
+                const result = reader.result;
+                if (!result || typeof result !== 'string') {
+                    reject(new Error('FileReader result is invalid'));
+                    return;
+                }
+
+                const commaIndex = result.indexOf(',');
+                if (commaIndex === -1) {
+                    reject(new Error('Invalid data URL format'));
+                    return;
+                }
+
+                const base64 = result.substring(commaIndex + 1);
+                if (!base64) {
+                    reject(new Error('No base64 data found'));
+                    return;
+                }
+
+                console.log(`File ${file.name} converted to base64: ${base64.length} characters`);
+                resolve(base64);
+            } catch (error) {
+                reject(new Error(`Error processing file data: ${error.message}`));
+            }
+        };
+        
+        reader.onerror = () => {
+            reject(new Error(`FileReader error: ${reader.error?.message || 'Unknown error'}`));
+        };
+
+        reader.onabort = () => {
+            reject(new Error('FileReader operation was aborted'));
+        };
+
+        try {
+            reader.readAsDataURL(file);
+        } catch (error) {
+            reject(new Error(`Failed to start reading file: ${error.message}`));
+        }
+    });
+}
+
+// Enhanced debug logging
+function debugLog(title, data) {
+    if (debugMode.checked) {
+        const timestamp = new Date().toLocaleTimeString();
+        const logEntry = `[${timestamp}] ${title}:\n${JSON.stringify(data, null, 2)}\n\n`;
+        debugContent.textContent += logEntry;
+        debugContent.scrollTop = debugContent.scrollHeight;
+    }
+    
+    // Also log to console for easier debugging
+    console.log(`[DEBUG] ${title}:`, data);
+}
+
+// Enhanced file upload handler with validation
+async function handleFileUpload(event) {
+    const files = Array.from(event.target.files);
+    if (files.length === 0) return;
+
+    console.log(`Selected ${files.length} files for upload`);
+
+    // Validate files before processing
+    const validFiles = [];
+    const invalidFiles = [];
+    
+    const allowedTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'text/plain',
+        'text/csv',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/gif'
+    ];
+
+    files.forEach(file => {
+        if (allowedTypes.includes(file.type) || file.name.match(/\.(pdf|doc|docx|txt|csv|xls|xlsx|jpg|jpeg|png|gif)$/i)) {
+            validFiles.push(file);
+        } else {
+            invalidFiles.push(file);
+            console.warn(`Invalid file type: ${file.name} (${file.type})`);
+        }
+    });
+
+    if (invalidFiles.length > 0) {
+        alert(`Some files were skipped due to unsupported format: ${invalidFiles.map(f => f.name).join(', ')}`);
+    }
+
+    if (validFiles.length === 0) {
+        alert('No valid files selected. Please upload PDF, DOC, TXT, CSV, XLS, or image files.');
+        event.target.value = '';
+        return;
+    }
+
+    if (autoProcessFiles.checked) {
+        showFileProcessingToast();
+        try {
+            console.log(`Processing ${validFiles.length} valid files...`);
+            const processedFiles = await processFiles(validFiles);
+            uploadedFiles.push(...processedFiles);
+            
+            const successful = processedFiles.filter(f => f.processed).length;
+            const failed = processedFiles.filter(f => !f.processed).length;
+            
+            console.log(`File processing complete: ${successful} successful, ${failed} failed`);
+            
+            if (failed > 0) {
+                const failedNames = processedFiles.filter(f => !f.processed).map(f => f.name);
+                console.warn('Failed to process files:', failedNames);
+            }
+            
+            renderFiles();
+        } catch (error) {
+            console.error('Error processing files:', error);
+            alert(`Error processing some files: ${error.message}. Please check the console for details.`);
+        } finally {
+            hideFileProcessingToast();
+        }
+    } else {
+        // Add files without processing
+        const unprocessedFiles = validFiles.map(file => ({
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            base64Content: null,
+            originalFile: file,
+            processed: false,
+            processingError: null
+        }));
+        uploadedFiles.push(...unprocessedFiles);
+        renderFiles();
+        console.log(`Added ${unprocessedFiles.length} files without processing`);
+    }
+
+    // Clear the input
+    event.target.value = '';
+}
+
+// Enhanced API request function with better error handling
+async function apiRequest(url, options = {}) {
+    const defaultOptions = {
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+        },
+        credentials: 'same-origin',
+    };
+
+    const mergedOptions = {
+        ...defaultOptions,
+        ...options,
+        headers: {
+            ...defaultOptions.headers,
+            ...options.headers,
+        },
+    };
+
+    debugLog('API Request', { 
+        url, 
+        method: mergedOptions.method || 'GET',
+        bodyLength: mergedOptions.body ? mergedOptions.body.length : 0,
+        headers: mergedOptions.headers
+    });
+
+    try {
+        const response = await fetch(url, mergedOptions);
+        
+        let data;
+        const contentType = response.headers.get('content-type');
+        
+        if (contentType && contentType.includes('application/json')) {
+            data = await response.json();
+        } else {
+            const text = await response.text();
+            console.warn('Non-JSON response received:', text.substring(0, 200));
+            throw new Error(`Server returned non-JSON response: ${response.status} ${response.statusText}`);
+        }
+        
+        debugLog('API Response', { 
+            status: response.status, 
+            ok: response.ok,
+            dataKeys: Object.keys(data || {}),
+            contentType: contentType
+        });
+        
+        if (!response.ok) {
+            const errorMessage = data?.error || data?.detail || data?.message || `HTTP ${response.status}: ${response.statusText}`;
+            throw new Error(errorMessage);
+        }
+        
+        return data;
+    } catch (error) {
+        debugLog('API Error', { 
+            error: error.message,
+            stack: error.stack,
+            url: url
+        });
+        
+        // Re-throw with more context
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            throw new Error('Network error: Unable to connect to server. Please check your connection.');
+        }
+        
+        throw error;
+    }
+}
+
+// Add a test file processing function for debugging
+async function testFileProcessing() {
+    console.log('=== FILE PROCESSING TEST ===');
+    
+    if (uploadedFiles.length === 0) {
+        console.log('No files uploaded for testing');
+        return;
+    }
+    
+    for (const file of uploadedFiles) {
+        console.log(`Testing file: ${file.name}`);
+        console.log(`  Processed: ${file.processed}`);
+        console.log(`  Has base64: ${!!file.base64Content}`);
+        console.log(`  Base64 length: ${file.base64Content ? file.base64Content.length : 0}`);
+        console.log(`  Error: ${file.processingError || 'None'}`);
+        
+        if (file.base64Content) {
+            console.log(`  Base64 sample: ${file.base64Content.substring(0, 50)}...`);
+        }
+    }
+    
+    console.log('=== END TEST ===');
+}
+
+// Add to global scope for debugging
+window.testFileProcessing = testFileProcessing;
+window.debugLog = debugLog;
+
+// Enhanced render files function with better status display
+function renderFiles() {
+    if (uploadedFiles.length === 0) {
+        fileUploadArea.classList.add('hidden');
+        return;
+    }
+
+    fileUploadArea.classList.remove('hidden');
+    filesList.innerHTML = uploadedFiles.map((file, index) => {
+        const statusClass = file.processingError ? 'border-red-300 bg-red-50' : 
+                           file.processed ? 'border-green-300 bg-green-50' : 
+                           'border-gray-300';
+        
+        const statusIcon = file.processingError ? '❌' : 
+                          file.processed ? '✅' : 
+                          '⏳';
+        
+        const statusText = file.processingError ? 'Error' : 
+                          file.processed ? 'Ready' : 
+                          'Raw';
+                          
+        return `
+            <div class="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border ${statusClass}">
+                <span class="text-lg">${getFileIcon(file.name)}</span>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm text-gray-700 truncate max-w-32" title="${file.name}">${file.name}</span>
+                        <span class="text-xs font-medium flex items-center gap-1">
+                            ${statusIcon} ${statusText}
+                        </span>
+                    </div>
+                    <div class="text-xs text-gray-500">
+                        ${formatFileSize(file.size)}
+                        ${file.base64Content ? ` • ${Math.round(file.base64Content.length / 1024)}KB base64` : ''}
+                    </div>
+                    ${file.processingError ? `
+                        <div class="text-xs text-red-600 mt-1" title="${file.processingError}">
+                            ${file.processingError.length > 50 ? file.processingError.substring(0, 50) + '...' : file.processingError}
+                        </div>
+                    ` : ''}
+                </div>
+                <div class="flex items-center gap-1">
+                    ${!file.processed && !file.processingError ? `
+                        <button onclick="processIndividualFile(${index})" class="text-blue-500 hover:text-blue-700 text-xs px-2 py-1 border border-blue-300 rounded">
+                            Process
+                        </button>
+                    ` : ''}
+                    <button onclick="removeFile(${index})" class="text-gray-400 hover:text-red-500" title="Remove file">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    // Add a summary at the bottom if there are multiple files
+    if (uploadedFiles.length > 1) {
+        const processed = uploadedFiles.filter(f => f.processed).length;
+        const errors = uploadedFiles.filter(f => f.processingError).length;
+        const pending = uploadedFiles.length - processed - errors;
+        
+        const summaryHtml = `
+            <div class="text-xs text-gray-500 mt-2 p-2 bg-gray-100 rounded">
+                Files: ${uploadedFiles.length} total, ${processed} ready, ${pending} pending, ${errors} errors
+                ${errors > 0 ? ' • Some files failed to process' : ''}
+                ${processed > 0 ? ' • Ready to send' : ''}
+            </div>
+        `;
+        filesList.insertAdjacentHTML('beforeend', summaryHtml);
+    }
+}
 
         // Make functions available globally
         window.removeFile = removeFile;

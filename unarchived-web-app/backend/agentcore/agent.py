@@ -12,6 +12,9 @@ from langchain.memory import ConversationBufferMemory
 from langchain_openai import ChatOpenAI
 import json
 import re
+import logging
+
+logger = logging.getLogger(__name__)
 
 llm = ChatOpenAI(
     model_name=config("OPENAI_MODEL", default="gpt-4"),
@@ -164,29 +167,66 @@ class ConversationalAgent:
     def chat(self, message: str, files: List[Dict] = None) -> Dict[str, Any]:
         """
         Main chat interface that handles messages and files intelligently.
+        Expected file format: [{"filename": "...", "content": "base64...", "content_type": "..."}]
         """
         # Add user message to history
         self.conversation_history.append({"role": "user", "content": message})
         
         # Process any uploaded files first
         file_results = []
-        if files:
+        file_content_summary = ""
+        
+        if files and len(files) > 0:
+            logger.info(f"Processing {len(files)} files")
+            
             for file_info in files:
                 try:
-                    result = file_parser_tool_base64.func(
-                        content=file_info.get("content", ""),
-                        filename=file_info.get("filename", ""),
-                        content_type=file_info.get("content_type", "")
-                    )
-                    file_results.append(result)
-                    self.context["files_processed"].append(file_info.get("filename", "unknown"))
+                    filename = file_info.get("filename", "unknown")
+                    content = file_info.get("content", "")
+                    content_type = file_info.get("content_type", "application/octet-stream")
                     
-                    # Add file content to conversation context
+                    logger.info(f"Processing file: {filename}, type: {content_type}, content length: {len(content)}")
+                    
+                    # Use the file parser tool
+                    result = file_parser_tool_base64.func(
+                        content=content,
+                        filename=filename,
+                        content_type=content_type
+                    )
+                    
+                    file_results.append({
+                        "filename": filename,
+                        "status": "success",
+                        "extracted_text": result.get("extracted_text", ""),
+                        "content_type": content_type
+                    })
+                    
+                    self.context["files_processed"].append(filename)
+                    
+                    # Add file content to the message context
                     if result.get("extracted_text"):
-                        message += f"\n\n[File Content from {file_info.get('filename', 'uploaded file')}]:\n{result['extracted_text']}"
+                        file_content_summary += f"\n\n=== Content from {filename} ===\n{result['extracted_text']}\n"
+                        logger.info(f"Successfully extracted {len(result['extracted_text'])} characters from {filename}")
+                    else:
+                        logger.warning(f"No text extracted from {filename}")
                         
                 except Exception as e:
-                    file_results.append({"error": f"Failed to process file: {str(e)}"})
+                    logger.error(f"Failed to process file {file_info.get('filename', 'unknown')}: {str(e)}")
+                    file_results.append({
+                        "filename": file_info.get("filename", "unknown"),
+                        "status": "error",
+                        "error": str(e),
+                        "extracted_text": ""
+                    })
+
+        # Enhance the message with file content if available
+        enhanced_message = message
+        if file_content_summary:
+            enhanced_message += f"\n\nI have also uploaded some files with the following content:{file_content_summary}"
+            logger.info(f"Enhanced message with file content. Total length: {len(enhanced_message)}")
+
+        # Update the conversation history with the enhanced message
+        self.conversation_history[-1]["content"] = enhanced_message
         
         # Prepare state for the agent
         initial_state = {
@@ -210,6 +250,9 @@ class ConversationalAgent:
                     assistant_message = last_message.content
                 elif isinstance(last_message, dict) and "content" in last_message:
                     assistant_message = last_message["content"]
+                else:
+                    logger.warning("Could not extract assistant message from result")
+                    assistant_message = "I processed your request but couldn't generate a proper response."
             
             # Add assistant response to history
             if assistant_message:
@@ -222,23 +265,45 @@ class ConversationalAgent:
                 "response": assistant_message,
                 "file_results": file_results,
                 "context": self.context,
-                "suggestions": self._generate_suggestions()
+                "suggestions": self._generate_suggestions(),
+                "files_processed": len(file_results) if file_results else 0
             }
             
         except Exception as e:
-            error_response = f"I encountered an error: {str(e)}. Could you please try again or rephrase your request?"
+            logger.error(f"Agent processing error: {str(e)}")
+            error_response = f"I encountered an error processing your request: {str(e)}. "
+            
+            # If files were processed successfully, mention that
+            if file_results and any(f.get("status") == "success" for f in file_results):
+                successful_files = [f["filename"] for f in file_results if f.get("status") == "success"]
+                error_response += f"However, I was able to process these files: {', '.join(successful_files)}. "
+                
+            error_response += "Please try rephrasing your request or contact support if the issue persists."
+            
             self.conversation_history.append({"role": "assistant", "content": error_response})
             return {
                 "response": error_response,
                 "error": str(e),
-                "context": self.context
+                "context": self.context,
+                "file_results": file_results,
+                "files_processed": len(file_results) if file_results else 0
             }
     
     def _update_context_from_result(self, result):
         """Update the conversation context based on agent results."""
         # This would be enhanced to detect when DPGs or RFQs are created
         # and update the context accordingly
-        pass
+        try:
+            # Look for DPG creation in the result
+            if "dpg" in str(result).lower():
+                logger.info("Detected potential DPG creation")
+            
+            # Look for RFQ creation in the result
+            if "rfq" in str(result).lower():
+                logger.info("Detected potential RFQ creation")
+                
+        except Exception as e:
+            logger.error(f"Error updating context: {str(e)}")
     
     def _generate_suggestions(self) -> List[str]:
         """Generate helpful suggestions based on current context."""
@@ -255,6 +320,9 @@ class ConversationalAgent:
         
         if len(self.context["dpgs_created"]) > 1:
             suggestions.append("🔄 Compare multiple DPGs or merge related products")
+            
+        if self.context["files_processed"]:
+            suggestions.append("🔍 Ask me questions about the content in your uploaded files")
         
         return suggestions
     
