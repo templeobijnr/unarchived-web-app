@@ -225,24 +225,9 @@ def file_parser_tool_base64(content: str, filename: str, content_type: str) -> d
 from langchain_core.tools import tool
 import base64
 import json
-from io import BytesIO
 
-"""@tool
-    def file_parser_tool_base64(encoded_file_str: str) -> dict:
-        
-        #Accepts a base64-encoded file input (JSON string with 'content', 'filename', 'content_type').
-        #Decodes and passes to file_parser_tool().
-        
-    
-        try:
-            from agentcore.tools import file_parser_tool
-            payload = json.loads(encoded_file_str)
-            file_bytes = base64.b64decode(payload["content"])
-            filename = payload["filename"]
-            content_type = payload["content_type"]
-            return file_parser_tool(file_bytes, filename, content_type)
-        except Exception as e:
-            return {"error": f"Failed to decode or parse: {str(e)}"}"""
+
+
 
 
 

@@ -27,6 +27,13 @@
             0%, 80%, 100% { transform: scale(0); }
             40% { transform: scale(1); }
         }
+        .file-processing {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
     </style>
 </head>
 <body class="bg-gray-100 h-screen">
@@ -58,6 +65,11 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">API Debug</label>
                         <input type="checkbox" id="debugMode" class="mr-2">
                         <span class="text-sm">Show API responses</span>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">File Processing</label>
+                        <input type="checkbox" id="autoProcessFiles" class="mr-2" checked>
+                        <span class="text-sm">Auto-convert to base64</span>
                     </div>
                 </div>
                 
@@ -111,7 +123,7 @@
                 <!-- Message Input -->
                 <div class="p-4 bg-white border-t border-gray-200">
                     <div class="flex gap-3 items-end">
-                        <input type="file" multiple id="fileInput" class="hidden" accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif">
+                        <input type="file" multiple id="fileInput" class="hidden" accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.csv,.xls,.xlsx">
                         <label for="fileInput" class="p-2 text-gray-500 hover:text-gray-700 cursor-pointer transition-colors">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
@@ -151,6 +163,15 @@
         <pre id="debugContent" class="text-xs text-gray-600 whitespace-pre-wrap"></pre>
     </div>
 
+    <!-- File Processing Toast -->
+    <div id="fileProcessingToast" class="hidden fixed top-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg">
+        <div class="flex items-center gap-2">
+            <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            <span>Processing files...</span>
+        </div>
+    </div>
+
+    
     <script>
         // Global state
         let currentConversation = null;
@@ -180,6 +201,8 @@
         const debugContent = document.getElementById('debugContent');
         const debugMode = document.getElementById('debugMode');
         const closeDebug = document.getElementById('closeDebug');
+        const autoProcessFiles = document.getElementById('autoProcessFiles');
+        const fileProcessingToast = document.getElementById('fileProcessingToast');
 
         // Event listeners
         settingsBtn.addEventListener('click', () => {
@@ -205,6 +228,96 @@
                 debugPanel.classList.add('hidden');
             }
         });
+
+        // File processing functions
+        function showFileProcessingToast() {
+            fileProcessingToast.classList.remove('hidden');
+        }
+
+        function hideFileProcessingToast() {
+            fileProcessingToast.classList.add('hidden');
+        }
+
+        function getFileIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const iconMap = {
+                'pdf': '📄',
+                'doc': '📝',
+                'docx': '📝',
+                'txt': '📄',
+                'csv': '📊',
+                'xls': '📊',
+                'xlsx': '📊',
+                'jpg': '🖼️',
+                'jpeg': '🖼️',
+                'png': '🖼️',
+                'gif': '🖼️'
+            };
+            return iconMap[ext] || '📎';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        async function convertFileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    // Remove the data URL prefix (data:mime/type;base64,)
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function processFiles(files) {
+            const processedFiles = [];
+            
+            for (const file of files) {
+                try {
+                    const base64Content = await convertFileToBase64(file);
+                    
+                    const processedFile = {
+                        name: file.name,
+                        size: file.size,
+                        type: file.type,
+                        base64Content: base64Content,
+                        originalFile: file,
+                        processed: true,
+                        processingError: null
+                    };
+                    
+                    processedFiles.push(processedFile);
+                    debugLog('File processed', {
+                        name: file.name,
+                        size: file.size,
+                        type: file.type,
+                        base64Length: base64Content.length
+                    });
+                } catch (error) {
+                    console.error('Error processing file:', file.name, error);
+                    const errorFile = {
+                        name: file.name,
+                        size: file.size,
+                        type: file.type,
+                        base64Content: null,
+                        originalFile: file,
+                        processed: false,
+                        processingError: error.message
+                    };
+                    processedFiles.push(errorFile);
+                }
+            }
+            
+            return processedFiles;
+        }
 
         // Utility functions
         function getCookie(name) {
@@ -494,12 +607,21 @@
             addLoadingMessage();
 
             try {
+                // Prepare files data for API
+                const filesData = uploadedFiles.map(file => ({
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                    base64Content: file.base64Content,
+                    processed: file.processed
+                }));
+
                 const data = await apiRequest('/api/chat/messages/ai-chat/', {
                     method: 'POST',
                     body: JSON.stringify({
                         conversation: currentConversation.id,
                         content: content,
-                        files: uploadedFiles // If you want to support file uploads
+                        files: filesData
                     })
                 });
 
@@ -543,10 +665,39 @@
         }
 
         // File handling
-        function handleFileUpload(event) {
+        async function handleFileUpload(event) {
             const files = Array.from(event.target.files);
-            uploadedFiles.push(...files);
-            renderFiles();
+            if (files.length === 0) return;
+
+            if (autoProcessFiles.checked) {
+                showFileProcessingToast();
+                try {
+                    const processedFiles = await processFiles(files);
+                    uploadedFiles.push(...processedFiles);
+                    renderFiles();
+                } catch (error) {
+                    console.error('Error processing files:', error);
+                    alert('Error processing some files. Please check the console for details.');
+                } finally {
+                    hideFileProcessingToast();
+                }
+            } else {
+                // Add files without processing
+                const unprocessedFiles = files.map(file => ({
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                    base64Content: null,
+                    originalFile: file,
+                    processed: false,
+                    processingError: null
+                }));
+                uploadedFiles.push(...unprocessedFiles);
+                renderFiles();
+            }
+
+            // Clear the input
+            event.target.value = '';
         }
 
         function renderFiles() {
@@ -557,18 +708,61 @@
 
             fileUploadArea.classList.remove('hidden');
             filesList.innerHTML = uploadedFiles.map((file, index) => `
-                <div class="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border">
-                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    <span class="text-sm text-gray-700 truncate max-w-32">${file.name}</span>
-                    <button onclick="removeFile(${index})" class="text-gray-400 hover:text-red-500">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                        </svg>
-                    </button>
+                <div class="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border ${file.processingError ? 'border-red-300 bg-red-50' : file.processed ? 'border-green-300 bg-green-50' : 'border-gray-300'}">
+                    <span class="text-lg">${getFileIcon(file.name)}</span>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm text-gray-700 truncate max-w-32">${file.name}</span>
+                            ${file.processed ? `
+                                <span class="text-xs text-green-600 font-medium">✓ Base64</span>
+                            ` : file.processingError ? `
+                                <span class="text-xs text-red-600 font-medium">✗ Error</span>
+                            ` : `
+                                <span class="text-xs text-gray-500">Raw</span>
+                            `}
+                        </div>
+                        <div class="text-xs text-gray-500">
+                            ${formatFileSize(file.size)}
+                            ${file.base64Content ? ` • ${Math.round(file.base64Content.length / 1024)}KB base64` : ''}
+                        </div>
+                        ${file.processingError ? `
+                            <div class="text-xs text-red-600 mt-1">${file.processingError}</div>
+                        ` : ''}
+                    </div>
+                    <div class="flex items-center gap-1">
+                        ${!file.processed && !file.processingError ? `
+                            <button onclick="processIndividualFile(${index})" class="text-blue-500 hover:text-blue-700 text-xs px-2 py-1 border border-blue-300 rounded">
+                                Process
+                            </button>
+                        ` : ''}
+                        <button onclick="removeFile(${index})" class="text-gray-400 hover:text-red-500">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             `).join('');
+        }
+
+        async function processIndividualFile(index) {
+            const file = uploadedFiles[index];
+            if (!file || file.processed) return;
+
+            try {
+                showFileProcessingToast();
+                const processedFiles = await processFiles([file.originalFile]);
+                if (processedFiles.length > 0) {
+                    uploadedFiles[index] = processedFiles[0];
+                    renderFiles();
+                }
+            } catch (error) {
+                console.error('Error processing individual file:', error);
+                uploadedFiles[index].processingError = error.message;
+                renderFiles();
+            } finally {
+                hideFileProcessingToast();
+            }
         }
 
         function removeFile(index) {
@@ -587,8 +781,10 @@
             loadConversations();
         });
 
-        // Make removeFile available globally
+        // Make functions available globally
         window.removeFile = removeFile;
+        window.processIndividualFile = processIndividualFile;
     </script>
+
 </body>
 </html>
