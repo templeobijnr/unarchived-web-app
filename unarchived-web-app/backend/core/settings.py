@@ -27,7 +27,8 @@ INSTALLED_APPS = [
     
     # Custom apps
     'agentcore',
-    
+    'knowledge_base',
+    'pgvector',
     'chat',
     'dpgs',
     'files',
