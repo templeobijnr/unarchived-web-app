@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-
+from knowledge_base.models import KnowledgeChunk
 class DigitalProductGenome(models.Model):
     LIFECYCLE_STAGES = [
         ('created', 'Created'),
@@ -19,11 +19,19 @@ class DigitalProductGenome(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    class Meta:
-        ordering = ['-created_at']
+    knowledge_chunks = models.ManyToManyField(KnowledgeChunk, blank=True)
 
     def __str__(self):
         return f"{self.title} (v{self.version})"
+    
+    class Meta:
+        ordering = ['-created_at']
+
+    def fetch_knowledge_for_dpg(self):
+        """Fetches relevant knowledge from the knowledge base and links it to this DPG"""
+        relevant_knowledge = KnowledgeChunk.objects.filter(domain="materials")  # Example domain
+        self.knowledge_chunks.add(*relevant_knowledge)
+        self.save()
 
 # dpgs/models.py
 class DPGComponent(models.Model):

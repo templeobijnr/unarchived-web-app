@@ -4,15 +4,19 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader, TextLoader
 from langchain_openai import OpenAIEmbeddings
 from knowledge_base.models import KnowledgeChunk
+from decouple import config
+import os
+
+os.environ["OPENAI_API_KEY"] = config("OPENAI_API_KEY")
 
 class Command(BaseCommand):
     help = "Ingests knowledge base documents into pgvector"
 
     def handle(self, *args, **options):
-        base_dir = "./knowledge_base"
+        base_dir = "./unarchived_knowledge_base"
         documents = []
 
-        loader = DirectoryLoader(base_dir, loader_cls=TextLoader, glob="**/*.md", recursive=True)
+        loader = DirectoryLoader(base_dir, glob="**/*.md", loader_cls=lambda path: TextLoader(path, encoding="utf-8"), recursive=True)
         documents.extend(loader.load())
 
         pdf_loader = DirectoryLoader(base_dir, loader_cls=PyPDFLoader, glob="**/*.pdf", recursive=True)
