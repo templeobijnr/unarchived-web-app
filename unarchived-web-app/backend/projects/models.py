@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from dpgs.models import DigitalProductGenome
 
 class ProjectStage(models.Model):
     """

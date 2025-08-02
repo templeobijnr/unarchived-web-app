@@ -5,6 +5,7 @@ from langchain_community.tools import TavilySearchResults
 from langchain_openai import OpenAIEmbeddings
 from pgvector.django import L2Distance
 from decouple import config
+from pydantic import BaseModel
 import re
 import json
 from PIL import Image
@@ -56,6 +57,12 @@ class DPGSchema(BaseModel):
     image_references: List[str] | None = None
     extracted_from: List[str] | None = None
     confidence_notes: str | None = None
+
+
+def knowledge_base_retriever_tool(query: str) -> str:
+    """Retrieve relevant knowledge chunks from the Knowledge Base."""
+    knowledge = KnowledgeChunk.objects.filter(content__icontains=query)
+    return "\n".join([chunk.content for chunk in knowledge])
 
 @tool
 def dpg_builder_tool(prompt: str) -> dict:
@@ -159,7 +166,6 @@ def dpg_updater_tool(current_dpg_json: dict, new_information_prompt: str) -> dic
     Enhanced DPG updater that intelligently merges new information with existing DPG.
     Implements the 'living DPG' concept from Phase 3 of the specifications.
     """
-    # Use structured output for consistent updates
     structured_llm = ChatOpenAI(
         model_name=config("OPENAI_MODEL", default="gpt-4"),
         openai_api_key=config("OPENAI_API_KEY"),
