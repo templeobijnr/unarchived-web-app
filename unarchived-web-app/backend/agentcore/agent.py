@@ -711,17 +711,18 @@ class ConversationalAgent:
     
     
     
+    @transaction.atomic
     def chat(self, message: str, files: List[Dict] = None, dpg_id: int = None, image_data: str = None) -> Dict[str, Any]:
         """
         Main chat interface using the enhanced LangGraph architecture.
-        Now supports all tools and capabilities.
+        Now supports all tools and capabilities from tools.py.
         """
         try:
             # Update DPG ID if provided
             if dpg_id:
                 self.current_dpg_id = dpg_id
                 # In production, load from database:
-                self.current_dpg_data = DigitalProductGenome.objects.get(id=dpg_id).data
+                # self.current_dpg_data = DigitalProductGenome.objects.get(id=dpg_id).data
             
             # Prepare initial state (enhanced)
             initial_state = self._prepare_initial_state(message, files, image_data)
@@ -755,17 +756,17 @@ class ConversationalAgent:
             updated_dpg_data = final_state.get('dpg_in_progress')
             if updated_dpg_data and self.user:
                 # Placeholder for database save logic
-                if self.current_dpg_id:
-                    dpg_obj = DigitalProductGenome.objects.get(id=self.current_dpg_id)
-                    dpg_obj.data = updated_dpg_data
-                    dpg_obj.save()
-                else:
-                   new_dpg = DigitalProductGenome.objects.create(
-                      owner=self.user,
-                      data=updated_dpg_data
-                    )
-                self.current_dpg_id = new_dpg.id
-                
+                # if self.current_dpg_id:
+                #     dpg_obj = DigitalProductGenome.objects.get(id=self.current_dpg_id)
+                #     dpg_obj.data = updated_dpg_data
+                #     dpg_obj.save()
+                # else:
+                #     new_dpg = DigitalProductGenome.objects.create(
+                #         owner=self.user,
+                #         data=updated_dpg_data
+                #     )
+                #     self.current_dpg_id = new_dpg.id
+                pass
             
             return {
                 "response": assistant_message,
@@ -797,7 +798,7 @@ class ConversationalAgent:
         """Generate contextual suggestions based on current state and all available capabilities."""
         suggestions = []
         last_action = final_state.get('last_action')
-        dpg_exists = bool(final_state.get('dpg_in_progress'))
+        dpg_exists = bool(final_state.get('dpg_in_progress') and final_state.get('dpg_in_progress', {}).get('data'))
         
         if last_action == "ask_questions":
             suggestions.extend([
@@ -868,7 +869,8 @@ class ConversationalAgent:
         # Always available suggestions
         suggestions.extend([
             "❓ Ask about materials or processes",
-            "🔍 Search for current market info"
+            "🔍 Search for current market info",
+            "📊 Check knowledge base stats"
         ])
         
         return suggestions[:6]  # Limit to 6 suggestions for UI
@@ -881,9 +883,29 @@ class ConversationalAgent:
 - Current DPG ID: {self.current_dpg_id}
 - DPG Data: {'Present' if self.current_dpg_data else 'None'}
 - Files Processed: {len(self.context.get('files_processed', []))}
-- Last Action: {getattr(self, '_last_action', 'None')}
 - Available Tools: {len(tools)} tools integrated
+- Last Action: {getattr(self, '_last_action', 'None')}
+
+**Available Capabilities:**
+- Create and update Digital Product Genomes (DPGs)
+- Generate professional RFQs
+- Search expert knowledge base (materials, processes, compliance)
+- Find suppliers and check compliance requirements
+- Analyze product images and process documents
+- Perform current market research
 """
+
+    def get_dpg_summary(self) -> str:
+        """Get a summary of the current DPG using the dpg_summary_tool."""
+        if not self.current_dpg_data or not self.current_dpg_data.get('data'):
+            return "No DPG currently available. Create one by describing your product!"
+        
+        try:
+            summary = dpg_summary_tool.func(self.current_dpg_data)
+            return summary
+        except Exception as e:
+            logger.error(f"Error generating DPG summary: {str(e)}")
+            return f"Error generating DPG summary: {str(e)}"
 
 # Backwards compatibility function (enhanced)
 def chat_session(messages: list, files: List[Dict] = None, image_data: str = None) -> dict:
@@ -909,7 +931,10 @@ def chat_session(messages: list, files: List[Dict] = None, image_data: str = Non
             "dpg_id": result.get("dpg_id"),
             "suggestions": result.get("suggestions", []),
             "analysis": result.get("analysis", {}),
-            "last_action": result.get("last_action")
+            "last_action": result.get("last_action"),
+            "file_results": result.get("file_results", []),
+            "retrieved_context": result.get("retrieved_context"),
+            "search_results": result.get("search_results")
         }
     
     return {
@@ -918,3 +943,35 @@ def chat_session(messages: list, files: List[Dict] = None, image_data: str = Non
         "context": {},
         "suggestions": ["🚀 Start by describing your product idea"]
     }
+
+# Utility functions for external use
+def create_agent(user=None, dpg_id=None) -> ConversationalAgent:
+    """Factory function to create a new agent instance."""
+    return ConversationalAgent(user=user, dpg_id=dpg_id)
+
+def get_knowledge_base_stats() -> str:
+    """Get knowledge base statistics using the stats tool."""
+    try:
+        return knowledge_base_stats_tool.func()
+    except Exception as e:
+        logger.error(f"Error getting KB stats: {str(e)}")
+        return f"Error retrieving knowledge base statistics: {str(e)}"
+
+def search_knowledge_base(query: str, domain: str = None) -> str:
+    """Search the knowledge base with optional domain filtering."""
+    try:
+        if domain:
+            return knowledge_base_domain_search_tool.func(query, domain)
+        else:
+            return knowledge_base_retriever_tool.func(query)
+    except Exception as e:
+        logger.error(f"Error searching knowledge base: {str(e)}")
+        return f"Error searching knowledge base: {str(e)}"
+
+def find_entity_info(entity_name: str) -> str:
+    """Find comprehensive information about a specific entity."""
+    try:
+        return knowledge_base_entity_search_tool.func(entity_name)
+    except Exception as e:
+        logger.error(f"Error finding entity info: {str(e)}")
+        return f"Error finding information for '{entity_name}': {str(e)}"

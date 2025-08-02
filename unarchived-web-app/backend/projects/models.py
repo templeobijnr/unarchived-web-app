@@ -55,9 +55,29 @@ class Project(models.Model):
         through="ProjectMember",
         related_name="projects"
     )
+    
+    # CRITICAL: The Agent's Focus Anchor
+    # This field enables stateful AI conversations within project context
+    active_dpg = models.OneToOneField(
+        'dpgs.DigitalProductGenome',  # Forward reference to avoid circular imports
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='active_in_project',
+        help_text="The DPG currently being worked on by the agent in this project."
+    )
 
     def __str__(self):
         return self.name
+    
+    def get_active_dpg_or_none(self):
+        """Helper method to safely get active DPG"""
+        return self.active_dpg
+    
+    def has_active_dpg(self):
+        """Check if project has an active DPG"""
+        return self.active_dpg is not None
+
 
 class ProjectMember(models.Model):
     """
@@ -83,4 +103,3 @@ class ProjectMember(models.Model):
         # A more robust way to display the user's name.
         user_display = getattr(self.user, 'name', self.user.username)
         return f"{user_display} in {self.project.name} ({self.get_role_display()})"
-
