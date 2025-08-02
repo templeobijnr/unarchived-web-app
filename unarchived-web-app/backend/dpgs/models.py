@@ -20,7 +20,7 @@ class DigitalProductGenome(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     knowledge_chunks = models.ManyToManyField(KnowledgeChunk, blank=True)
-
+    
     def __str__(self):
         return f"{self.title} (v{self.version})"
     
@@ -33,7 +33,6 @@ class DigitalProductGenome(models.Model):
         self.knowledge_chunks.add(*relevant_knowledge)
         self.save()
 
-# dpgs/models.py
 class DPGComponent(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
@@ -46,7 +45,6 @@ class DPGComponent(models.Model):
     def __str__(self):
         return f"Component: {self.name} for {self.dpg.title}"
 
-# dpgs/models.py
 class ComponentSpecification(models.Model):
     component = models.ForeignKey(DPGComponent, related_name='specifications', on_delete=models.CASCADE)
     material = models.CharField(max_length=100)
@@ -58,7 +56,7 @@ class ComponentSpecification(models.Model):
     def __str__(self):
         return f"Specification for {self.component.name} - Material: {self.material}"
 
-# dpgs/models.py
+
 class ApparelDPGExtension(models.Model):
     dpg = models.OneToOneField(DigitalProductGenome, related_name='apparel_extension', on_delete=models.CASCADE)
     fabric_composition = models.TextField(blank=True)
@@ -73,7 +71,6 @@ class ApparelDPGExtension(models.Model):
     def __str__(self):
         return f"Apparel Specifics for {self.dpg.title}"
 
-# dpgs/models.py
 class GeneratedAsset(models.Model):
     dpg = models.ForeignKey(DigitalProductGenome, related_name='assets', on_delete=models.CASCADE)
     file = models.FileField(upload_to='assets/', null=True, blank=True)
@@ -82,7 +79,6 @@ class GeneratedAsset(models.Model):
 
     def __str__(self):
         return f"Asset for {self.dpg.title} ({self.file.name})"
-
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver

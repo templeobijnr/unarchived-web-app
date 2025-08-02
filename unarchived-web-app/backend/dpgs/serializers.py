@@ -29,10 +29,6 @@ class DigitalProductGenomeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DigitalProductGenome
-<<<<<<< HEAD
-        fields = ['id', 'title', 'description', 'version', 'data', 'stage', 'created_at', 'updated_at', 'components', 'apparel_extension', 'assets']
-        read_only_fields = ['id', 'owner','created_at', 'updated_at']
-=======
         fields = '__all__'
         read_only_fields = ('id', 'owner', 'created_at', 'updated_at')
     
@@ -43,4 +39,3 @@ class DigitalProductGenomeSerializer(serializers.ModelSerializer):
             # Process dynamic fields (like materials, components) if necessary
             pass  # Add any custom logic here to process complex data structures
         return representation
->>>>>>> 7053c7ac760f8b7cc6e95ccb374ef373c20c11b9
