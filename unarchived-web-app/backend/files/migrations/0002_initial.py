@@ -9,14 +9,14 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('quotes', '0001_initial'),
-        ('rfq', '0001_initial'),
+        ('files', '0001_initial'),
+        ('projects', '0001_initial'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='quote',
-            name='rfq',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='quotes', to='rfq.rfq'),
+            model_name='uploadedfile',
+            name='project',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='files', to='projects.project'),
         ),
     ]

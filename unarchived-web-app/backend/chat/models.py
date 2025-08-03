@@ -1,8 +1,8 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 
 class Conversation(models.Model):
-    participants = models.ManyToManyField(User, related_name='conversations')
+    participants = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='conversations')
     created_at = models.DateTimeField(auto_now_add=True)
 
 class Message(models.Model):
@@ -21,7 +21,7 @@ class Message(models.Model):
     ai_confidence = models.FloatField(null=True, blank=True)
     ai_version = models.CharField(max_length=32, null=True, blank=True)
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages', null=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='messages')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='messages')
     
     class Meta:
         ordering = ['timestamp']
