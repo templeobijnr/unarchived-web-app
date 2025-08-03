@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 
 class RFQ(models.Model):
@@ -52,7 +52,7 @@ class RFQ(models.Model):
     views = models.IntegerField(default=0)
     
     # Foreign keys
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='rfqs')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='rfqs')
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
