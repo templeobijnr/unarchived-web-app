@@ -51,3 +51,14 @@ class ProjectMemberSerializer(serializers.ModelSerializer):
         model = ProjectMember
         fields = ['id', 'project', 'user', 'role', 'joined_at']
         read_only_fields = ['project', 'joined_at']
+
+class ProjectUploadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectUpload
+        fields = "__all__"
+
+
+class ProjectContextEngineSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectContextEngine
+        fields = "__all__"

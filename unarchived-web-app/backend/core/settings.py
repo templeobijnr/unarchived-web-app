@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'pgvector',
     'chat',
     'dpgs',
+    'generative',
     'files',
     'projects',
     'quotes',
@@ -40,6 +41,8 @@ INSTALLED_APPS = [
 ]
 
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+
+REPLICATE_API_TOKEN = config('REPLICATE_API_TOKEN')
 
 AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY')
@@ -176,6 +179,29 @@ CORS_ALLOW_HEADERS = [
     "accept", "accept-encoding", "authorization", "content-type",
     "dnt", "origin", "user-agent", "x-csrftoken", "x-requested-with",
 ]
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+        },
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'generative_service.log',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
 
 # OpenAI Settings
 OPENAI_API_KEY = config('OPENAI_API_KEY')

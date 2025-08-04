@@ -11,6 +11,7 @@ from .permissions import IsProjectMember, IsProjectOwner
 from django.db.models import Q
 from rest_framework.generics import get_object_or_404
 import logging
+from .analysis import trigger_ai_analysis
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -22,7 +23,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return Project.objects.filter(
             Q(owner=self.request.user) | Q(members=self.request.user)
-        ).distinct()
+        ).distinct().order_by('-created_at')
 
     def perform_create(self, serializer):
         project = serializer.save(owner=self.request.user)
@@ -74,6 +75,28 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def get_object(self):
         # This allows detail routes to fetch any project (then check permissions)
         return get_object_or_404(Project, pk=self.kwargs["pk"])
+
+    @action(detail=True, methods=["get"])
+    def context(self, request, pk=None):
+        project = self.get_object()
+        context = ProjectContextEngine.objects.filter(project=project).first()
+        uploads = ProjectUpload.objects.filter(project=project)
+
+        return Response({
+            "context_summary": ProjectContextEngineSerializer(context).data if context else {},
+            "uploads": ProjectUploadSerializer(uploads, many=True).data
+        })
+
+    @action(detail=True, methods=["post"])
+    def ignite(self, request, pk=None):
+        # Re-analyze all uploaded files
+        project = self.get_object()
+        files = project.projectfile_set.all()
+
+        for file in files:
+            trigger_ai_analysis(file)
+
+        return Response({"message": "AI analysis triggered for all files."})
 
 class ProjectStageViewSet(viewsets.ModelViewSet):
     queryset = ProjectStage.objects.all()
