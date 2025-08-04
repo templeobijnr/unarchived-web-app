@@ -24,7 +24,16 @@ class Migration(migrations.Migration):
                 ('version', models.CharField(default='1.0', max_length=20)),
                 ('summary', models.TextField(blank=True)),
                 ('data', models.JSONField(default=dict)),
-                ('stage', models.CharField(choices=[('created', 'Created'), ('reviewed', 'Reviewed'), ('approved', 'Approved'), ('used', 'Used in RFQ')], default='created', max_length=20)),
+                ('stage', models.CharField(
+                    choices=[
+                        ('created', 'Created'),
+                        ('reviewed', 'Reviewed'),
+                        ('approved', 'Approved'),
+                        ('used', 'Used in RFQ')
+                    ],
+                    default='created',
+                    max_length=20
+                )),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('knowledge_chunks', models.ManyToManyField(blank=True, to='knowledge_base.knowledgechunk')),
