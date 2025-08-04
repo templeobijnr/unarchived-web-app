@@ -104,3 +104,37 @@ class ProjectMember(models.Model):
         # A more robust way to display the user's name.
         user_display = getattr(self.user, 'name', self.user.username)
         return f"{user_display} in {self.project.name} ({self.get_role_display()})"
+    
+class ProjectContextEngine(models.Model):
+    """
+    Stores the AI-analyzed context summary for a project, including design intent and business requirements.
+    This is updated whenever new information is analyzed (project ignition or file uploads).
+    """
+    project = models.OneToOneField(Project, on_delete=models.CASCADE, related_name="context_engine")
+    design_intent = models.TextField(blank=True, help_text="Summary of the project's design goals or intent.")
+    business_requirements = models.TextField(blank=True, help_text="Summary of business requirements (budget, timeline, market, etc).")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)  # auto-updated on each context refresh
+
+    def __str__(self):
+        return f"AI Context for {self.project.name}"
+
+class ProjectUpload(models.Model):
+    """
+    Represents a file uploaded to a project, with AI analysis metadata.
+    Links to the actual file stored and the project.
+    """
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="uploads")
+    # Link to the file in the files app (assuming files.UploadedFile model exists):
+    file_record = models.ForeignKey('files.UploadedFile', on_delete=models.CASCADE, related_name="project_uploads")
+    # AI-generated metadata:
+    original_name = models.CharField(max_length=255)          # Original filename for reference
+    file_type = models.CharField(max_length=50, blank=True)   # e.g. "image/png", "application/pdf"
+    category = models.CharField(max_length=20, blank=True, help_text="Auto-tag (sketch, specification, reference)") 
+    extracted_text = models.TextField(blank=True, help_text="Full text extracted from the file (OCR or text parse).")
+    design_intent = models.TextField(blank=True, help_text="Design intent extracted from this file.")
+    business_requirements = models.TextField(blank=True, help_text="Business requirements info extracted from this file.")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Upload[{self.id}] {self.original_name} ({self.category}) for {self.project.name}"

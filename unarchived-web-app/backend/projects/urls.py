@@ -7,6 +7,7 @@ router.register(r'', ProjectViewSet, basename='projects')
 router.register(r'stages', ProjectStageViewSet, basename='project-stages')
 
 
+
 urlpatterns = [
     path('', include(router.urls)),
     path('files/<int:pk>/', FileDeleteView.as_view()),
