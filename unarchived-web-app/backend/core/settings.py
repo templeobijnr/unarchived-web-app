@@ -40,11 +40,12 @@ INSTALLED_APPS = [
     'rfq',
     'suppliers',
     'users',
+    'test',
 ]
 
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
-REPLICATE_API_TOKEN = config('REPLICATE_API_TOKEN')
+REPLICATE_API_TOKEN = config('REPLICATE_API_TOKEN', default='')
 
 AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY')

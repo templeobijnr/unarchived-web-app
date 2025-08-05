@@ -1,0 +1,17 @@
+
+
+services:
+  db:
+    image: ankane/pgvector
+    restart: always
+    environment:
+      POSTGRES_DB: unarchived_db         # match your DB_NAME
+      POSTGRES_USER: unarchived_user     # match your DB_USER
+      POSTGRES_PASSWORD: unarchived_pass # match your DB_PASSWORD
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+volumes:
+  pg_data:

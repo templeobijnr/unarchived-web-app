@@ -17,8 +17,8 @@ class ImageGenerationService:
         
         # Initialize Replicate client
         try:
-            self.replicate_client = replicate.Client(api_token=settings.REPLICATE_API_TOKEN)
-            logger.info("Replicate client initialized successfully.")
+           self.replicate_client = replicate.Client(api_token=settings.REPLICATE_API_TOKEN)
+           logger.info("Replicate client initialized successfully.")
         except Exception as e:
             logger.error(f"Failed to initialize Replicate client: {e}")
         
@@ -43,7 +43,7 @@ class ImageGenerationService:
             model = self.replicate_client.models.get(model_id)
             prediction = model.predict(**inputs)
             logger.info("Image generation successful.")
-            return prediction
+           # return prediction
         except Exception as e:
             logger.error(f"Error during image generation: {e}")
             return None
