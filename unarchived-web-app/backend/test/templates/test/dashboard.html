@@ -315,6 +315,14 @@
                 <div class="stat-label">Quotes</div>
             </div>
             <div class="stat-card">
+                <div class="stat-number" id="projectsCount">-</div>
+                <div class="stat-label">Projects</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="projectStagesCount">-</div>
+                <div class="stat-label">Project Stages</div>
+            </div>
+            <div class="stat-card">
                 <div class="stat-number" id="knowledgeCount">-</div>
                 <div class="stat-label">Knowledge Chunks</div>
             </div>
@@ -393,6 +401,179 @@
                 </form>
                 
                 <div id="dpgResults"></div>
+            </div>
+
+            <!-- Project Testing -->
+            <div class="test-section">
+                <div class="section-header">
+                    <div class="section-icon">📋</div>
+                    <div class="section-title">Project Management</div>
+                </div>
+                
+                <form id="projectForm">
+                    <div class="form-group">
+                        <label class="form-label">Project Name</label>
+                        <input type="text" class="form-input" id="projectName" placeholder="Test Project">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-input form-textarea" id="projectDescription" placeholder="Project description..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status</label>
+                        <select class="form-input" id="projectStatus">
+                            <option value="ACTIVE">Active</option>
+                            <option value="ON_HOLD">On Hold</option>
+                            <option value="COMPLETED">Completed</option>
+                            <option value="ARCHIVED">Archived</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Stage Name</label>
+                        <input type="text" class="form-input" id="projectStageName" placeholder="Ideation">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Category</label>
+                        <input type="text" class="form-input" id="projectCategory" placeholder="apparel">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Design Intent</label>
+                        <textarea class="form-input form-textarea" id="projectDesignIntent" placeholder="Design intent..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Business Requirements</label>
+                        <textarea class="form-input form-textarea" id="projectBusinessRequirements" placeholder="Business requirements..."></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn">Create Project</button>
+                    <button type="button" class="btn btn-secondary" onclick="loadProjects()">Load Projects</button>
+                </form>
+                
+                <div id="projectResults"></div>
+            </div>
+
+            <!-- Project Members Testing -->
+            <div class="test-section">
+                <div class="section-header">
+                    <div class="section-icon">👥</div>
+                    <div class="section-title">Project Members</div>
+                </div>
+                
+                <form id="projectMemberForm">
+                    <div class="form-group">
+                        <label class="form-label">Project ID</label>
+                        <input type="number" class="form-input" id="memberProjectId" placeholder="1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Username</label>
+                        <input type="text" class="form-input" id="memberUsername" placeholder="test_member">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Role</label>
+                        <select class="form-input" id="memberRole">
+                            <option value="OWNER">Owner</option>
+                            <option value="EDITOR">Editor</option>
+                            <option value="VIEWER">Viewer</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn">Add Member</button>
+                    <button type="button" class="btn btn-secondary" onclick="loadProjectMembers()">Load Members</button>
+                </form>
+                
+                <div id="projectMemberResults"></div>
+            </div>
+
+            <!-- Project Stages Testing -->
+            <div class="test-section">
+                <div class="section-header">
+                    <div class="section-icon">📊</div>
+                    <div class="section-title">Project Stages</div>
+                </div>
+                
+                <form id="projectStageForm">
+                    <div class="form-group">
+                        <label class="form-label">Stage Name</label>
+                        <input type="text" class="form-input" id="stageName" placeholder="Development">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Order</label>
+                        <input type="number" class="form-input" id="stageOrder" placeholder="2">
+                    </div>
+                    
+                    <button type="submit" class="btn">Create Stage</button>
+                    <button type="button" class="btn btn-secondary" onclick="loadProjectStages()">Load Stages</button>
+                </form>
+                
+                <div id="projectStageResults"></div>
+            </div>
+
+            <!-- Project Context Testing -->
+            <div class="test-section">
+                <div class="section-header">
+                    <div class="section-icon">🧠</div>
+                    <div class="section-title">Project Context</div>
+                </div>
+                
+                <form id="projectContextForm">
+                    <div class="form-group">
+                        <label class="form-label">Project ID</label>
+                        <input type="number" class="form-input" id="contextProjectId" placeholder="1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Design Intent</label>
+                        <textarea class="form-input form-textarea" id="contextDesignIntent" placeholder="Updated design intent..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Business Requirements</label>
+                        <textarea class="form-input form-textarea" id="contextBusinessRequirements" placeholder="Updated business requirements..."></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn">Update Context</button>
+                    <button type="button" class="btn btn-secondary" onclick="loadProjectContext()">Load Context</button>
+                </form>
+                
+                <div id="projectContextResults"></div>
+            </div>
+
+            <!-- Project Uploads Testing -->
+            <div class="test-section">
+                <div class="section-header">
+                    <div class="section-icon">📁</div>
+                    <div class="section-title">Project Uploads</div>
+                </div>
+                
+                <form id="projectUploadForm">
+                    <div class="form-group">
+                        <label class="form-label">Project ID</label>
+                        <input type="number" class="form-input" id="uploadProjectId" placeholder="1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Filename</label>
+                        <input type="text" class="form-input" id="uploadFilename" placeholder="specification.pdf">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">File Type</label>
+                        <input type="text" class="form-input" id="uploadFileType" placeholder="application/pdf">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Category</label>
+                        <select class="form-input" id="uploadCategory">
+                            <option value="specification">Specification</option>
+                            <option value="sketch">Sketch</option>
+                            <option value="reference">Reference</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Extracted Text</label>
+                        <textarea class="form-input form-textarea" id="uploadExtractedText" placeholder="Extracted text from file..."></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn">Create Upload</button>
+                    <button type="button" class="btn btn-secondary" onclick="loadProjectUploads()">Load Uploads</button>
+                </form>
+                
+                <div id="projectUploadResults"></div>
             </div>
 
             <!-- Agent Testing -->
@@ -515,6 +696,8 @@
                 if (data.status === 'success') {
                     document.getElementById('usersCount').textContent = data.stats.users_count;
                     document.getElementById('dpgsCount').textContent = data.stats.dpgs_count;
+                    document.getElementById('projectsCount').textContent = data.stats.projects_count;
+                    document.getElementById('projectStagesCount').textContent = data.stats.project_stages_count;
                     document.getElementById('suppliersCount').textContent = data.stats.suppliers_count;
                     document.getElementById('rfqsCount').textContent = data.stats.rfqs_count;
                     document.getElementById('quotesCount').textContent = data.stats.quotes_count;
@@ -692,6 +875,142 @@
             }
         });
 
+        // Project form handling
+        document.getElementById('projectForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = {
+                name: document.getElementById('projectName').value || `Test Project ${Date.now()}`,
+                description: document.getElementById('projectDescription').value || 'Test project for testing purposes',
+                status: document.getElementById('projectStatus').value,
+                stage_name: document.getElementById('projectStageName').value || 'Ideation',
+                category: document.getElementById('projectCategory').value || 'apparel',
+                design_intent: document.getElementById('projectDesignIntent').value || 'Test design intent',
+                business_requirements: document.getElementById('projectBusinessRequirements').value || 'Test business requirements'
+            };
+
+            try {
+                const response = await fetch('/test/projects/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                displayResult('projectResults', result);
+                if (result.status === 'success') {
+                    loadStats();
+                }
+            } catch (error) {
+                displayError('projectResults', error.message);
+            }
+        });
+
+        // Project Member form handling
+        document.getElementById('projectMemberForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = {
+                project_id: document.getElementById('memberProjectId').value,
+                username: document.getElementById('memberUsername').value || `test_member_${Date.now()}`,
+                role: document.getElementById('memberRole').value
+            };
+
+            try {
+                const response = await fetch('/test/project-members/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                displayResult('projectMemberResults', result);
+            } catch (error) {
+                displayError('projectMemberResults', error.message);
+            }
+        });
+
+        // Project Stage form handling
+        document.getElementById('projectStageForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = {
+                name: document.getElementById('stageName').value || `Test Stage ${Date.now()}`,
+                order: document.getElementById('stageOrder').value || 1
+            };
+
+            try {
+                const response = await fetch('/test/project-stages/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                displayResult('projectStageResults', result);
+                if (result.status === 'success') {
+                    loadStats();
+                }
+            } catch (error) {
+                displayError('projectStageResults', error.message);
+            }
+        });
+
+        // Project Context form handling
+        document.getElementById('projectContextForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = {
+                project_id: document.getElementById('contextProjectId').value,
+                design_intent: document.getElementById('contextDesignIntent').value || 'Updated design intent',
+                business_requirements: document.getElementById('contextBusinessRequirements').value || 'Updated business requirements'
+            };
+
+            try {
+                const response = await fetch('/test/project-context/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                displayResult('projectContextResults', result);
+            } catch (error) {
+                displayError('projectContextResults', error.message);
+            }
+        });
+
+        // Project Upload form handling
+        document.getElementById('projectUploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = {
+                project_id: document.getElementById('uploadProjectId').value,
+                filename: document.getElementById('uploadFilename').value || `test_file_${Date.now()}.txt`,
+                file_type: document.getElementById('uploadFileType').value || 'text/plain',
+                category: document.getElementById('uploadCategory').value,
+                extracted_text: document.getElementById('uploadExtractedText').value || 'Test extracted text from file'
+            };
+
+            try {
+                const response = await fetch('/test/project-uploads/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                displayResult('projectUploadResults', result);
+            } catch (error) {
+                displayError('projectUploadResults', error.message);
+            }
+        });
+
         // Load functions
         async function loadUsers() {
             try {
@@ -730,6 +1049,71 @@
                 displayResult('supplierResults', result);
             } catch (error) {
                 displayError('supplierResults', error.message);
+            }
+        }
+
+        async function loadProjects() {
+            try {
+                const response = await fetch('/test/projects/');
+                const result = await response.json();
+                displayResult('projectResults', result);
+            } catch (error) {
+                displayError('projectResults', error.message);
+            }
+        }
+
+        async function loadProjectMembers() {
+            try {
+                const projectId = document.getElementById('memberProjectId').value;
+                if (!projectId) {
+                    displayError('projectMemberResults', 'Please enter a Project ID first');
+                    return;
+                }
+                const response = await fetch(`/test/project-members/?project_id=${projectId}`);
+                const result = await response.json();
+                displayResult('projectMemberResults', result);
+            } catch (error) {
+                displayError('projectMemberResults', error.message);
+            }
+        }
+
+        async function loadProjectStages() {
+            try {
+                const response = await fetch('/test/project-stages/');
+                const result = await response.json();
+                displayResult('projectStageResults', result);
+            } catch (error) {
+                displayError('projectStageResults', error.message);
+            }
+        }
+
+        async function loadProjectContext() {
+            try {
+                const projectId = document.getElementById('contextProjectId').value;
+                if (!projectId) {
+                    displayError('projectContextResults', 'Please enter a Project ID first');
+                    return;
+                }
+                const response = await fetch(`/test/project-context/?project_id=${projectId}`);
+                const result = await response.json();
+                displayResult('projectContextResults', result);
+            } catch (error) {
+                displayError('projectContextResults', error.message);
+            }
+        }
+
+        async function loadProjectUploads() {
+            try {
+                const projectId = document.getElementById('uploadProjectId').value;
+                if (!projectId) {
+                    displayError('projectUploadResults', 'Please enter a Project ID first');
+                    return;
+                }
+                const response = await fetch(`/test/project-uploads/?project_id=${projectId}`);
+                const result = await response.json();
+                displayResult('projectUploadResults', result);
+            } catch (error) {
+                displayError('projectUploadResults', error.message);
             }
         }
 

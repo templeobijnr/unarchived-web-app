@@ -58,7 +58,24 @@ The testing dashboard provides:
 - Verify component relationships
 - Test apparel-specific extensions
 
-### 3. 🤖 AI Agent
+### 3. 📋 Project Management
+**Purpose**: Test the comprehensive project management system
+
+**Features**:
+- Create projects with stages, status, and categories
+- Manage project members with different roles (Owner, Editor, Viewer)
+- Create and manage project stages
+- Update project context (design intent, business requirements)
+- Handle project file uploads with AI analysis
+
+**Test Scenarios**:
+- Create projects with different statuses and stages
+- Add team members with various roles
+- Test project context engine updates
+- Upload files and test AI analysis integration
+- Verify project-DPG relationships
+
+### 4. 🤖 AI Agent
 **Purpose**: Test the conversational AI system
 
 **Features**:
@@ -73,7 +90,7 @@ The testing dashboard provides:
 - Test knowledge retrieval
 - Verify agent suggestions
 
-### 4. 📄 File Analysis
+### 5. 📄 File Analysis
 **Purpose**: Test document processing and AI analysis
 
 **Features**:
@@ -88,7 +105,7 @@ The testing dashboard provides:
 - Verify AI analysis results
 - Test different file formats
 
-### 5. 🧠 Knowledge Base
+### 6. 🧠 Knowledge Base
 **Purpose**: Test the vector-based knowledge system
 
 **Features**:
@@ -103,7 +120,7 @@ The testing dashboard provides:
 - Verify entity relationships
 - Test knowledge chunk creation
 
-### 6. 🏭 Suppliers
+### 7. 🏭 Suppliers
 **Purpose**: Test supplier management system
 
 **Features**:
@@ -125,6 +142,11 @@ The testing interface also provides REST API endpoints for programmatic testing:
 - `GET /test/` - Dashboard statistics
 - `GET/POST /test/users/` - User management
 - `GET/POST /test/dpgs/` - DPG management
+- `GET/POST /test/projects/` - Project management
+- `GET/POST /test/project-members/` - Project member management
+- `GET/POST /test/project-stages/` - Project stage management
+- `GET/POST /test/project-context/` - Project context engine
+- `GET/POST /test/project-uploads/` - Project file uploads
 - `POST /test/agent/` - AI agent testing
 - `POST /test/analysis/` - File analysis
 - `GET/POST /test/knowledge/` - Knowledge base
@@ -135,35 +157,41 @@ The testing interface also provides REST API endpoints for programmatic testing:
 
 ### Basic Product Creation Workflow
 1. **Create a User** - Start with a test user
-2. **Create a DPG** - Define product specifications
-3. **Add Knowledge** - Add relevant material/process knowledge
-4. **Test AI Agent** - Ask the agent about the product
-5. **Upload Files** - Add supporting documents
-6. **Create Suppliers** - Add potential suppliers
+2. **Create a Project** - Set up project structure and context
+3. **Add Project Members** - Add team members with roles
+4. **Create a DPG** - Define product specifications
+5. **Add Knowledge** - Add relevant material/process knowledge
+6. **Test AI Agent** - Ask the agent about the product
+7. **Upload Files** - Add supporting documents
+8. **Create Suppliers** - Add potential suppliers
 
 ### Advanced Testing Scenarios
 
 #### Scenario 1: Apparel Product Development
 1. Create user with apparel expertise
-2. Create DPG for "Cotton T-Shirt"
-3. Add fabric composition knowledge
-4. Test AI agent with "What materials should I use?"
-5. Upload design specifications
-6. Create textile suppliers
+2. Create project for "Summer Collection 2024"
+3. Add team members (designer, product manager)
+4. Create DPG for "Cotton T-Shirt"
+5. Add fabric composition knowledge
+6. Test AI agent with "What materials should I use?"
+7. Upload design specifications
+8. Create textile suppliers
 
 #### Scenario 2: Supplier Discovery
-1. Create multiple suppliers with different specializations
-2. Create DPG with specific requirements
-3. Use AI agent to find matching suppliers
-4. Test RFQ generation
-5. Verify supplier matching logic
+1. Create project for "Supplier Evaluation"
+2. Create multiple suppliers with different specializations
+3. Create DPG with specific requirements
+4. Use AI agent to find matching suppliers
+5. Test RFQ generation
+6. Verify supplier matching logic
 
 #### Scenario 3: Knowledge Integration
-1. Add comprehensive material knowledge
-2. Create DPGs that reference this knowledge
-3. Test AI agent's knowledge retrieval
-4. Verify knowledge chunk relationships
-5. Test domain-specific searches
+1. Create project for "Knowledge Base Development"
+2. Add comprehensive material knowledge
+3. Create DPGs that reference this knowledge
+4. Test AI agent's knowledge retrieval
+5. Verify knowledge chunk relationships
+6. Test domain-specific searches
 
 ## 🐛 Troubleshooting
 
