@@ -227,31 +227,7 @@ class ActivateAccountView(APIView):
         return Response({'error': 'Activation link invalid or expired'}, status=400)
 
    
-def login_test_ui(request):
-    return render(request, 'login_test.html')
+def projectmgt_ui(request):
+    return render(request, 'projectmgt.html')
 
 
-from django.views.decorators.csrf import csrf_exempt
-from django.shortcuts import render
-
-@csrf_exempt  
-def register_user_ui(request):
-    """Handles registration from a browser form"""
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        email = request.POST.get('email')
-        password = request.POST.get('password')
-
-        if not all([username, email, password]):
-            return render(request, 'register.html', {'error': 'All fields are required'})
-
-        if User.objects.filter(username=username).exists():
-            return render(request, 'register.html', {'error': 'Username already exists'})
-
-        if User.objects.filter(email=email).exists():
-            return render(request, 'register.html', {'error': 'Email already exists'})
-
-        user = User.objects.create_user(username=username, email=email, password=password)
-        return render(request, 'register.html', {'message': 'Registration successful!'})
-
-    return render(request, 'register.html')

@@ -1,3 +1,4 @@
+#project/view
 # Auto-split from original views.py
 from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response

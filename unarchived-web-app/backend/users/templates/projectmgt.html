@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Management System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.0/axios.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Auth Forms */
+        .auth-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .auth-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .auth-card h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #4a5568;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #4a5568;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            text-align: center;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #667eea;
+            border: 2px solid #667eea;
+            margin-top: 10px;
+        }
+
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+            color: white;
+        }
+
+        /* Dashboard */
+        .dashboard {
+            display: none;
+        }
+
+        .dashboard.active {
+            display: block;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px 0;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .navbar-brand {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .navbar-nav {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: #4a5568;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: #667eea;
+        }
+
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .dashboard-header h1 {
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .dashboard-header p {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1rem;
+        }
+
+        .dashboard-actions {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .project-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .project-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+
+        .project-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin: 0;
+        }
+
+        .project-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status-active {
+            background: rgba(72, 187, 120, 0.2);
+            color: #2f855a;
+        }
+
+        .status-on-hold {
+            background: rgba(237, 137, 54, 0.2);
+            color: #c05621;
+        }
+
+        .status-completed {
+            background: rgba(102, 126, 234, 0.2);
+            color: #5a67d8;
+        }
+
+        .project-description {
+            color: #718096;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .project-meta {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+            color: #718096;
+        }
+
+        .project-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.875rem;
+            width: auto;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #a0aec0;
+        }
+
+        .close:hover {
+            color: #4a5568;
+        }
+
+        /* Members Section */
+        .members-list {
+            margin-top: 20px;
+        }
+
+        .member-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            background: #f7fafc;
+        }
+
+        .member-info h4 {
+            margin: 0 0 5px 0;
+            color: #2d3748;
+        }
+
+        .member-info p {
+            margin: 0;
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        .member-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .role-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .role-owner {
+            background: rgba(237, 137, 54, 0.2);
+            color: #c05621;
+        }
+
+        .role-editor {
+            background: rgba(72, 187, 120, 0.2);
+            color: #2f855a;
+        }
+
+        .role-viewer {
+            background: rgba(113, 128, 150, 0.2);
+            color: #4a5568;
+        }
+
+        /* Alerts */
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: none;
+        }
+
+        .alert-success {
+            background: rgba(72, 187, 120, 0.1);
+            color: #2f855a;
+            border: 1px solid rgba(72, 187, 120, 0.3);
+        }
+
+        .alert-error {
+            background: rgba(245, 101, 101, 0.1);
+            color: #c53030;
+            border: 1px solid rgba(245, 101, 101, 0.3);
+        }
+
+        .alert-info {
+            background: rgba(102, 126, 234, 0.1);
+            color: #5a67d8;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+        }
+
+        /* Loading */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .dashboard-actions {
+                flex-direction: column;
+            }
+
+            .projects-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .project-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .member-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .member-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
+
+        .select-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.8);
+            transition: all 0.3s ease;
+        }
+
+        .select-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .textarea-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.8);
+            resize: vertical;
+            min-height: 100px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .textarea-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Form -->
+    <div id="loginForm" class="auth-container">
+        <div class="auth-card">
+            <h2>Welcome Back</h2>
+            <div id="loginAlert"></div>
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="loginUsername">Username or Email</label>
+                    <input type="text" id="loginUsername" name="username" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" name="password" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <span class="btn-text">Sign In</span>
+                    <span class="loading hidden"></span>
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="showRegister()">
+                    Create Account
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Register Form -->
+    <div id="registerForm" class="auth-container hidden">
+        <div class="auth-card">
+            <h2>Create Account</h2>
+            <div id="registerAlert"></div>
+            <form onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label for="registerUsername">Username</label>
+                    <input type="text" id="registerUsername" name="username" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerEmail">Email</label>
+                    <input type="email" id="registerEmail" name="email" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="registerPassword">Password</label>
+                    <input type="password" id="registerPassword" name="password" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <span class="btn-text">Create Account</span>
+                    <span class="loading hidden"></span>
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="showLogin()">
+                    Already have an account?
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard" class="dashboard">
+        <nav class="navbar">
+            <div class="navbar-content">
+                <div class="navbar-brand">ProjectHub</div>
+                <div class="navbar-nav">
+                    <span id="userDisplay" class="nav-link"></span>
+                    <button class="btn btn-sm btn-secondary" onclick="logout()">Logout</button>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container">
+            <div class="dashboard-header">
+                <h1>Your Projects</h1>
+                <p>Manage your projects, collaborate with team members, and track progress</p>
+            </div>
+
+            <div class="dashboard-actions">
+                <button class="btn btn-primary" onclick="showCreateProject()">
+                    + Create New Project
+                </button>
+                <button class="btn btn-secondary" onclick="loadProjects()">
+                    🔄 Refresh
+                </button>
+            </div>
+
+            <div id="projectsContainer" class="projects-grid">
+                <!-- Projects will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Create/Edit Project Modal -->
+    <div id="projectModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="projectModalTitle">Create New Project</h3>
+                <button class="close" onclick="closeModal('projectModal')">&times;</button>
+            </div>
+            <div id="projectModalAlert"></div>
+            <form id="projectForm" onsubmit="handleProjectSubmit(event)">
+                <input type="hidden" id="projectId" name="id">
+                <div class="form-group">
+                    <label for="projectName">Project Name</label>
+                    <input type="text" id="projectName" name="name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="projectDescription">Description</label>
+                    <textarea id="projectDescription" name="description" class="textarea-control"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="projectStatus">Status</label>
+                    <select id="projectStatus" name="status" class="select-control">
+                        <option value="ACTIVE">Active</option>
+                        <option value="ON_HOLD">On Hold</option>
+                        <option value="COMPLETED">Completed</option>
+                        <option value="ARCHIVED">Archived</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="projectCategory">Category</label>
+                    <input type="text" id="projectCategory" name="category" class="form-control" placeholder="e.g., Mobile App, Web Development">
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <span class="btn-text">Save Project</span>
+                    <span class="loading hidden"></span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Manage Members Modal -->
+    <div id="membersModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Manage Team Members</h3>
+                <button class="close" onclick="closeModal('membersModal')">&times;</button>
+            </div>
+            <div id="membersModalAlert"></div>
+            
+            <!-- Add Member Form -->
+            <div class="card" style="margin-bottom: 25px;">
+                <h4>Add New Member</h4>
+                <form id="addMemberForm" onsubmit="handleAddMember(event)">
+                    <input type="hidden" id="memberProjectId" name="project_id">
+                    <div class="form-group">
+                        <label for="memberUsername">Username or Email</label>
+                        <input type="text" id="memberUsername" name="username" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="memberRole">Role</label>
+                        <select id="memberRole" name="role" class="select-control">
+                            <option value="VIEWER">Viewer</option>
+                            <option value="EDITOR">Editor</option>
+                            <option value="OWNER">Owner</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-success btn-sm">
+                        <span class="btn-text">Add Member</span>
+                        <span class="loading hidden"></span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Current Members -->
+            <div class="members-list">
+                <h4>Current Members</h4>
+                <div id="membersList">
+                    <!-- Members will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentUser = null;
+        let currentProjectId = null;
+        const API_BASE = 'http://127.0.0.1:8000/api'; // Adjust this to match your API base URL
+
+        // Authentication functions
+        function showLogin() {
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('registerForm').classList.add('hidden');
+        }
+
+        function showRegister() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.remove('hidden');
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            const form = event.target;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const btnText = submitBtn.querySelector('.btn-text');
+            const loading = submitBtn.querySelector('.loading');
+
+            try {
+                btnText.classList.add('hidden');
+                loading.classList.remove('hidden');
+                submitBtn.disabled = true;
+
+                const formData = new FormData(form);
+                const response = await fetch(`${API_BASE}/users/auth/login/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: formData.get('username'),
+                        password: formData.get('password')
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Store tokens
+                    localStorage.setItem('accessToken', data.access);
+                    localStorage.setItem('refreshToken', data.refresh);
+                    currentUser = data.user;
+                    showAlert('loginAlert', 'Login successful! Welcome back.', 'success');
+                    setTimeout(() => showDashboard(), 1000);
+                } else {
+                    showAlert('loginAlert', data.error || 'Login failed', 'error');
+                }
+            } catch (error) {
+                showAlert('loginAlert', 'Network error. Please try again.', 'error');
+            } finally {
+                btnText.classList.remove('hidden');
+                loading.classList.add('hidden');
+                submitBtn.disabled = false;
+            }
+        }
+
+        async function handleRegister(event) {
+            event.preventDefault();
+            const form = event.target;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const btnText = submitBtn.querySelector('.btn-text');
+            const loading = submitBtn.querySelector('.loading');
+
+            try {
+                btnText.classList.add('hidden');
+                loading.classList.remove('hidden');
+                submitBtn.disabled = true;
+
+                const formData = new FormData(form);
+                const response = await fetch(`${API_BASE}/users/auth/register/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: formData.get('username'),
+                        email: formData.get('email'),
+                        password: formData.get('password')
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showAlert('registerAlert', 'Account created! Please check your email to verify your account.', 'success');
+                    form.reset();
+                    setTimeout(() => showLogin(), 2000);
+                } else {
+                    showAlert('registerAlert', data.error || 'Registration failed', 'error');
+                }
+            } catch (error) {
+                showAlert('registerAlert', 'Network error. Please try again.', 'error');
+            } finally {
+                btnText.classList.remove('hidden');
+                loading.classList.add('hidden');
+                submitBtn.disabled = false;
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            currentUser = null;
+            showLogin();
+            document.getElementById('dashboard').classList.remove('active');
+        }
+
+        async function showDashboard() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('dashboard').classList.add('active');
+            
+            if (currentUser) {
+                document.getElementById('userDisplay').textContent = `Welcome, ${currentUser.username}`;
+            }
+            
+            await loadProjects();
+        }
+
+        // Project management functions
+        async function loadProjects() {
+            try {
+                const response = await authenticatedFetch(
+                    isEditing ? `${API_BASE}/projects/${projectId}/` : `${API_BASE}/projects/`,
+                    {
+                        method: isEditing ? 'PUT' : 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(projectData)
+                    }
+                );
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showAlert('projectModalAlert', `Project ${isEditing ? 'updated' : 'created'} successfully!`, 'success');
+                    setTimeout(() => {
+                        closeModal('projectModal');
+                        loadProjects();
+                    }, 1000);
+                } else {
+                    showAlert('projectModalAlert', data.error || `Failed to ${isEditing ? 'update' : 'create'} project`, 'error');
+                }
+            } catch (error) {
+                showAlert('projectModalAlert', 'Network error. Please try again.', 'error');
+            } finally {
+                btnText.classList.remove('hidden');
+                loading.classList.add('hidden');
+                submitBtn.disabled = false;
+            }
+        }
+
+        async function deleteProject(projectId) {
+            if (!confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const response = await authenticatedFetch(`${API_BASE}/projects/${projectId}/`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    showAlert('projectsContainer', 'Project deleted successfully', 'success');
+                    loadProjects();
+                } else {
+                    showAlert('projectsContainer', 'Failed to delete project', 'error');
+                }
+            } catch (error) {
+                showAlert('projectsContainer', 'Network error. Please try again.', 'error');
+            }
+        }
+
+        // Member management functions
+        async function manageMembers(projectId) {
+            currentProjectId = projectId;
+            document.getElementById('memberProjectId').value = projectId;
+            showModal('membersModal');
+            await loadMembers(projectId);
+        }
+
+        async function loadMembers(projectId) {
+            try {
+                const response = await authenticatedFetch(`${API_BASE}/projects/${projectId}/members/`);
+                const members = await response.json();
+
+                const container = document.getElementById('membersList');
+                if (members.length === 0) {
+                    container.innerHTML = `
+                        <div class="member-item">
+                            <p style="color: #718096; text-align: center;">No members found</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = members.map(member => `
+                    <div class="member-item">
+                        <div class="member-info">
+                            <h4>${escapeHtml(member.user_username)}</h4>
+                            <p>${escapeHtml(member.user_email || 'No email provided')}</p>
+                            <span class="role-badge role-${member.role.toLowerCase()}">${formatRole(member.role)}</span>
+                        </div>
+                        <div class="member-actions">
+                            ${member.role !== 'OWNER' ? `
+                                <select onchange="updateMemberRole(${member.user}, this.value)" class="select-control" style="width: auto; padding: 4px 8px; font-size: 0.8rem;">
+                                    <option value="VIEWER" ${member.role === 'VIEWER' ? 'selected' : ''}>Viewer</option>
+                                    <option value="EDITOR" ${member.role === 'EDITOR' ? 'selected' : ''}>Editor</option>
+                                    <option value="OWNER" ${member.role === 'OWNER' ? 'selected' : ''}>Owner</option>
+                                </select>
+                                <button class="btn btn-danger btn-sm" onclick="removeMember(${member.user})">Remove</button>
+                            ` : '<span style="color: #718096; font-size: 0.8rem;">Project Owner</span>'}
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Failed to load members:', error);
+                showAlert('membersModalAlert', 'Failed to load members', 'error');
+            }
+        }
+
+        async function handleAddMember(event) {
+            event.preventDefault();
+            const form = event.target;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const btnText = submitBtn.querySelector('.btn-text');
+            const loading = submitBtn.querySelector('.loading');
+
+            try {
+                btnText.classList.add('hidden');
+                loading.classList.remove('hidden');
+                submitBtn.disabled = true;
+
+                const formData = new FormData(form);
+                const response = await authenticatedFetch(`${API_BASE}/projects/${currentProjectId}/add_member/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: formData.get('username'),
+                        role: formData.get('role')
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showAlert('membersModalAlert', 'Member added successfully!', 'success');
+                    form.reset();
+                    await loadMembers(currentProjectId);
+                } else {
+                    showAlert('membersModalAlert', data.error || 'Failed to add member', 'error');
+                }
+            } catch (error) {
+                showAlert('membersModalAlert', 'Network error. Please try again.', 'error');
+            } finally {
+                btnText.classList.remove('hidden');
+                loading.classList.add('hidden');
+                submitBtn.disabled = false;
+            }
+        }
+
+        async function updateMemberRole(userId, newRole) {
+            try {
+                const response = await authenticatedFetch(`${API_BASE}/projects/${currentProjectId}/update_member/`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user: userId,
+                        role: newRole
+                    })
+                });
+
+                if (response.ok) {
+                    showAlert('membersModalAlert', 'Member role updated successfully!', 'success');
+                    await loadMembers(currentProjectId);
+                } else {
+                    const data = await response.json();
+                    showAlert('membersModalAlert', data.error || 'Failed to update member role', 'error');
+                }
+            } catch (error) {
+                showAlert('membersModalAlert', 'Network error. Please try again.', 'error');
+            }
+        }
+
+        async function removeMember(userId) {
+            if (!confirm('Are you sure you want to remove this member from the project?')) {
+                return;
+            }
+
+            try {
+                const response = await authenticatedFetch(`${API_BASE}/projects/${currentProjectId}/remove_member/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user: userId
+                    })
+                });
+
+                if (response.ok) {
+                    showAlert('membersModalAlert', 'Member removed successfully!', 'success');
+                    await loadMembers(currentProjectId);
+                } else {
+                    const data = await response.json();
+                    showAlert('membersModalAlert', data.error || 'Failed to remove member', 'error');
+                }
+            } catch (error) {
+                showAlert('membersModalAlert', 'Network error. Please try again.', 'error');
+            }
+        }
+
+        // Utility functions
+        async function authenticatedFetch(url, options = {}) {
+            const token = localStorage.getItem('accessToken');
+            if (!token) {
+                logout();
+                throw new Error('No authentication token');
+            }
+
+            return fetch(url, {
+                ...options,
+                headers: {
+                    ...options.headers,
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+        }
+
+        function showAlert(containerId, message, type = 'info') {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            
+            // Clear existing alerts
+            const existingAlerts = container.querySelectorAll('.alert');
+            existingAlerts.forEach(alert => alert.remove());
+            
+            // Insert at the beginning of the container
+            container.insertBefore(alert, container.firstChild);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+
+        function showModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+            document.body.style.overflow = 'auto';
+            
+            // Clear any alerts in the modal
+            const modal = document.getElementById(modalId);
+            const alerts = modal.querySelectorAll('.alert');
+            alerts.forEach(alert => alert.remove());
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatStatus(status) {
+            const statusMap = {
+                'ACTIVE': 'Active',
+                'ON_HOLD': 'On Hold',
+                'COMPLETED': 'Completed',
+                'ARCHIVED': 'Archived'
+            };
+            return statusMap[status] || status;
+        }
+
+        function formatRole(role) {
+            const roleMap = {
+                'OWNER': 'Owner',
+                'EDITOR': 'Editor',
+                'VIEWER': 'Viewer'
+            };
+            return roleMap[role] || role;
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user is already logged in
+            const token = localStorage.getItem('accessToken');
+            if (token) {
+                // Try to get user info and show dashboard
+                authenticatedFetch(`${API_BASE}/users/auth/user/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.id) {
+                            currentUser = data;
+                            showDashboard();
+                        } else {
+                            logout();
+                        }
+                    })
+                    .catch(() => {
+                        logout();
+                    });
+            } else {
+                showLogin();
+            }
+
+            // Close modals when clicking outside
+            window.addEventListener('click', function(event) {
+                const modals = document.querySelectorAll('.modal');
+                modals.forEach(modal => {
+                    if (event.target === modal) {
+                        closeModal(modal.id);
+                    }
+                });
+            });
+
+            // Close alerts when clicked
+            document.addEventListener('click', function(event) {
+                if (event.target.classList.contains('alert')) {
+                    event.target.remove();
+                }
+            });
+        });
+
+        // Handle browser back/forward buttons
+        window.addEventListener('popstate', function() {
+            const token = localStorage.getItem('accessToken');
+            if (!token) {
+                showLogin();
+            }
+        });
+
+        // Auto-refresh projects every 30 seconds if dashboard is visible
+        setInterval(() => {
+            if (document.getElementById('dashboard').classList.contains('active')) {
+                loadProjects();
+            }
+        }, 30000);
+    </script>
+</body>
+</html>dFetch(`${API_BASE}/projects/`);
+                const projects = await response.json();
+
+                const container = document.getElementById('projectsContainer');
+                if (projects.length === 0) {
+                    container.innerHTML = `
+                        <div class="card" style="grid-column: 1/-1; text-align: center; padding: 60px;">
+                            <h3 style="color: #718096; margin-bottom: 20px;">No projects yet</h3>
+                            <p style="color: #a0aec0; margin-bottom: 30px;">Create your first project to get started</p>
+                            <button class="btn btn-primary" onclick="showCreateProject()">+ Create Project</button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = projects.map(project => `
+                    <div class="card project-card">
+                        <div class="project-header">
+                            <h3 class="project-title">${escapeHtml(project.name)}</h3>
+                            <span class="project-status status-${project.status.toLowerCase().replace('_', '-')}">${formatStatus(project.status)}</span>
+                        </div>
+                        <p class="project-description">${escapeHtml(project.description) || 'No description provided'}</p>
+                        <div class="project-meta">
+                            <div class="meta-item">
+                                <span>📅</span>
+                                <span>${formatDate(project.created_at)}</span>
+                            </div>
+                            ${project.category ? `<div class="meta-item"><span>🏷️</span><span>${escapeHtml(project.category)}</span></div>` : ''}
+                            <div class="meta-item">
+                                <span>👤</span>
+                                <span>${escapeHtml(project.owner_username)}</span>
+                            </div>
+                        </div>
+                        <div class="project-actions">
+                            <button class="btn btn-primary btn-sm" onclick="editProject(${project.id})">✏️ Edit</button>
+                            <button class="btn btn-secondary btn-sm" onclick="manageMembers(${project.id})">👥 Members</button>
+                            ${project.owner === currentUser?.id ? `<button class="btn btn-danger btn-sm" onclick="deleteProject(${project.id})">🗑️ Delete</button>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Failed to load projects:', error);
+                showAlert('projectsContainer', 'Failed to load projects', 'error');
+            }
+        }
+
+        function showCreateProject() {
+            document.getElementById('projectModalTitle').textContent = 'Create New Project';
+            document.getElementById('projectForm').reset();
+            document.getElementById('projectId').value = '';
+            showModal('projectModal');
+        }
+
+        async function editProject(projectId) {
+            try {
+                const response = await authenticatedFetch(`${API_BASE}/projects/${projectId}/`);
+                const project = await response.json();
+
+                document.getElementById('projectModalTitle').textContent = 'Edit Project';
+                document.getElementById('projectId').value = project.id;
+                document.getElementById('projectName').value = project.name;
+                document.getElementById('projectDescription').value = project.description || '';
+                document.getElementById('projectStatus').value = project.status;
+                document.getElementById('projectCategory').value = project.category || '';
+                
+                showModal('projectModal');
+            } catch (error) {
+                console.error('Failed to load project:', error);
+                showAlert('projectsContainer', 'Failed to load project details', 'error');
+            }
+        }
+
+        async function handleProjectSubmit(event) {
+            event.preventDefault();
+            const form = event.target;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const btnText = submitBtn.querySelector('.btn-text');
+            const loading = submitBtn.querySelector('.loading');
+
+            try {
+                btnText.classList.add('hidden');
+                loading.classList.remove('hidden');
+                submitBtn.disabled = true;
+
+                const formData = new FormData(form);
+                const projectId = formData.get('id');
+                const isEditing = !!projectId;
+
+                const projectData = {
+                    name: formData.get('name'),
+                    description: formData.get('description'),
+                    status: formData.get('status'),
+                    category: formData.get('category')
+                };
+
+                const response = await authenticate
