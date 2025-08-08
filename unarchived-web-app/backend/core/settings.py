@@ -72,15 +72,15 @@ ROOT_URLCONF = "core.urls"
 
 TEMPLATES = [
     {
-        "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
-        "APP_DIRS": True,
-        "OPTIONS": {
-            "context_processors": [
-                "django.template.context_processors.debug",
-                "django.template.context_processors.request",
-                "django.contrib.auth.context_processors.auth",
-                "django.contrib.messages.context_processors.messages",
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],
+        'APP_DIRS': True,  # This should be True to find templates in app directories
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
             ],
         },
     },
@@ -210,7 +210,7 @@ LOGGING = {
 OPENAI_API_KEY = config('OPENAI_API_KEY')
 OPENAI_MODEL = config('OPENAI_MODEL', default='gpt-4o-mini')
 
-
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Google Cloud Vision API
 GOOGLE_APPLICATION_CREDENTIALS = config('GOOGLE_APPLICATION_CREDENTIALS')
@@ -221,4 +221,7 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 
 
-LOGIN_URL = '/api/users/logins/'
+LOGIN_URL = '/api/users/login/'
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True

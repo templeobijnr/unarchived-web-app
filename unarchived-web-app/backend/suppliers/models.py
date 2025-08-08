@@ -208,7 +208,7 @@ class CommunicationLog(models.Model):
     
     # Metadata
     initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
-    related_rfq = models.ForeignKey("rfq.RFQ", on_delete=models.SET_NULL, null=True, blank=True)
+    related_rfq = models.ForeignKey('rfq.RFQ', on_delete=models.SET_NULL, null=True, blank=True)
     related_quote = models.ForeignKey('quotes.Quote', on_delete=models.SET_NULL, null=True, blank=True)
     
     # Status

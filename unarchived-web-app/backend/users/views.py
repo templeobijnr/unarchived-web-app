@@ -12,6 +12,8 @@ from django.db.models import Q
 from .serializers import CustomTokenObtainPairSerializer
 from .models import *
 from .serializers import *
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 import logging
 from .utils import send_verification_email
 from django.contrib.auth.tokens import default_token_generator
@@ -23,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 class AuthViewSet(viewsets.ViewSet):
     """Simple authentication endpoints"""
-    
+    @method_decorator(csrf_exempt, name='dispatch')
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def login(self, request):
         """Simple login endpoint"""
@@ -123,7 +125,7 @@ class AuthViewSet(viewsets.ViewSet):
         except User.DoesNotExist:
             return Response({'error': 'No account found with this email'}, status=404)
 
-
+    
     @action(detail=False, methods=['put'], permission_classes=[permissions.IsAuthenticated])
     def update_profile(self, request):
         """Update profile & preferences"""
@@ -158,7 +160,7 @@ class AuthViewSet(viewsets.ViewSet):
                 {'error': 'Not authenticated'}, 
                 status=status.HTTP_401_UNAUTHORIZED
             )
-    
+    @method_decorator(csrf_exempt, name='dispatch')
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def register(self, request):
         """Register a new user"""
@@ -188,14 +190,24 @@ class AuthViewSet(viewsets.ViewSet):
                 username=username,
                 email=email,
                 password=password,
-                is_active=True  # keep user active but not verified
+                is_active=True
             )
-            user.is_verified = False  # Set to False initially until email verification
+            user.is_verified = True #True for development stage
             user.save()
-            send_verification_email(user, request)
+
+            # Try to send verification email, but don't fail if it doesn't work
+            try:
+                send_verification_email(user, request)
+                message = 'User created. Check your email to verify your account.'
+            except Exception as email_error:
+                logger.error(f"Email sending failed: {str(email_error)}")
+                # For development, you might want to auto-verify
+                user.is_verified = True
+                user.save()
+                message = 'User created and auto-verified (email service unavailable).'
 
             return Response({
-                'message': 'User created. Check your email to verify your account.',
+                'message': message,
                 'user_id': user.id
             }, status=status.HTTP_201_CREATED)
 
@@ -204,7 +216,7 @@ class AuthViewSet(viewsets.ViewSet):
             return Response({
                 'error': 'Failed to create user'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-     
+        
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     """Custom token view"""

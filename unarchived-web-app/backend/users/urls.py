@@ -12,7 +12,7 @@ urlpatterns = [
     
     # ✅ Add this for login
     
-    path("mgt/", projectmgt_ui, name="projectmgt_ui"),
+    path('mgt/', projectmgt_ui, name='projectmgt_ui'),
     
     path("activate/<uidb64>/<token>/", ActivateAccountView.as_view(), name="activate"),
 
