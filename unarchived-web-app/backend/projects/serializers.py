@@ -44,14 +44,15 @@ class ProjectSerializer(serializers.ModelSerializer):
             return None
 
 class ProjectMemberSerializer(serializers.ModelSerializer):
-
+    user_username = serializers.CharField(source='user.username', read_only=True)
+    user_email = serializers.CharField(source='user.email', read_only=True)
     role = serializers.ChoiceField(choices=ProjectMember.MemberRole.choices)
     
     class Meta:
         model = ProjectMember
-        fields = ['id', 'project', 'user', 'role', 'joined_at']
-        read_only_fields = ['project', 'joined_at']
-
+        fields = ['id', 'project', 'user', 'user_username', 'user_email', 'role', 'joined_at']
+        read_only_fields = ['project', 'joined_at', 'user_username', 'user_email']
+        
 class ProjectUploadSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProjectUpload
